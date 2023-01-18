@@ -86,20 +86,23 @@ output("Stars", stars)
 ####################
 
 blocks = []
-accepted_tags = {'p':'Text','h1':'Header','h2':'Header','h3':'Header','h4':'Text','code':'Code','a':'Link'}
+known_tags = {'p':'Text','h1':'Header','h2':'Header','h3':'Header','h4':'Text','code':'Code','a':'Link'}
+output_types = {'Header','Text','Code'} # Edit if you wish to change the set of output items 
 
 def dfs(e): 
 # Using DFS to search because some code blocks have 
 # very irregular HTML schemes due to syntax highlighting
 	if isinstance(e,bs4.element.NavigableString):
 		return
-	if e.name in accepted_tags:
+	if e.name in known_tags:
 		txt = lightclean(e.text)
 		if e.name != 'code' and len(re.findall(r'[\s]', txt)) > len(txt) * 0.25:
 			txt = clean(txt)
 		if len(clean(txt)) < MIN_LENGTH:
 			return
-		cat = accepted_tags[e.name]
+		cat = known_tags[e.name]
+		if not cat in output_types:
+	 		return
 		if (len(blocks) > 0 and (cat == blocks[-1][0]) 
 			and (cat == 'Text' or cat == 'Code')):
 			blocks[-1][1] += ("\n")+txt
