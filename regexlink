@@ -1,0 +1,4 @@
+Types of csdn blogs to match:
+
+\(https://blog\.csdn\.net.*/.\{,25\}/article/details/[0-9]*\)
+\(https://[^\.]*.blog\.csdn\.net/article/details/[0-9]*\)

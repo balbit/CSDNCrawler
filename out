@@ -1,0 +1,3459 @@
+Title
+----------------
+安卓逆向 AndroidManifest.xml 编辑 解码与编码工具
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a648642694/article/details/127525581
+================
+Stars
+----------------
+2
+================
+Text
+----------------
+前段时间在安卓逆向过程中要对AndroidManifest.xml文件 进行修改，在网上找了找工具都不是很好用
+他可以将整个axml二进制文件解码为常规xml保存为文件，在使用文本编辑完成后，再将xml编码为axml二进制文件，还是很好用的。前来分享一下~
+在github 搜索 xml2axml
+使用方法很简单:
+java -jar xml2axml.jar e ManifestDecode.xml ManifestEncode.xml
+================
+Code
+----------------
+java -jar xml2axml.jar e [AndroidManifest-readable-in.xml] [AndroidManifest-bin-out.xml]
+================
+Text
+----------------
+java -jar xml2axml.jar e ManifestEncode.xml ManifestDecode.xml
+================
+Code
+----------------
+java -jar xml2axml.jar d [AndroidManifest-bin-in.xml] [AndroidManifest-readable-out.xml]
+================
+Text
+----------------
+发现编码后AndroidManifest.xml 打包进apk 在andorid上安装时提示解析包失败！ 这个的原因可能是由于，某个节点有 空字符串(“”)导致，将其移除再此编码问题即解决。
+================
+Title
+----------------
+Blog  转移
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a542551042/article/details/50925731
+================
+Stars
+----------------
+0
+================
+Text
+----------------
+Blog 转移至 http://blog.rapcoder.com  CSDN 做为平时的问题总结
+欢迎一起交流 学习 ，谢谢！！！
+—- 事在人为，功不唐捐，不忘初心，方得始终！
+================
+Title
+----------------
+CentOS7 离线安装 ZABBIX 5.0
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a648642694/article/details/107332363
+================
+Stars
+----------------
+44
+================
+Text
+----------------
+小伙伴可能遇到了在公司内网环境下无法访问外网情况，无法访问外网yum源部署ZABBIX 对于rpm包依赖问题比较头疼。本文将会进行离线部署实战。
+离线安装所需依赖的rpm包。这个包怎么下载呢？依赖的包很多我这边采用的办法是在 先在有外网CentOS虚拟机下载rpm依赖包，制作本地yum源，后通过文件传输或其他方式至无法访问外网的内外服务器进行安装
+================
+Header
+----------------
+一、可访问外网 CentOS机器操作：
+================
+Text
+----------------
+在虚拟机安装内网环境同版本CentOS并设置好国内yum源 下载rpm依赖包。 我内网服务器CentOS版本为7.7，所以虚拟机同样安装7.7版本。
+CentOS历史版本下载： https://archive.kernel.org/centos-vault
+通过yum --downloadonly命令只下载rpm包不安装进行缓存
+按照官方安装步骤一套操作直接下载也可以… 国内镜像加速站下载也可以，得到如下包进行安装 zabbix-release-5.0-1.el7.noarch.rpm 并安装后修改zabbix.repo文件
+================
+Code
+----------------
+# vim /etc/yum.repos.d/zabbix.repo
+================
+Text
+----------------
+我修改了镜像源为清华大学开源镜像站进行加速下载 注意更改zabbix-frontend 下面的 enabled = 1
+================
+Code
+----------------
+wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+
+# yum clean all
+================
+Text
+----------------
+使用yum --downloadonly 进行下载rpm包和相关依赖包 downloaddir参数可进行设置下载保存路径
+下载 mysql数据库：
+================
+Code
+----------------
+yum install mariadb-server.x86_64 --downloadonly --downloaddir=/tmp/offline_rpm
+================
+Text
+----------------
+下载 zabbix主服务
+================
+Code
+----------------
+yum install zabbix-server-mysql zabbix-agent --downloadonly --downloaddir=/tmp/offline_rpm
+================
+Text
+----------------
+下载 Red Hat Software Collections:
+================
+Code
+----------------
+yum install centos-release-scl --downloadonly --downloaddir=/tmp/offline_rpm
+================
+Text
+----------------
+安装 Red Hat Software Collections:
+================
+Code
+----------------
+yum install centos-release-scl
+================
+Text
+----------------
+下载 Zabbix web服务:
+================
+Code
+----------------
+yum install zabbix-web-mysql-scl zabbix-apache-conf-scl --downloadonly --downloaddir=/tmp/offline_rpm
+================
+Text
+----------------
+6. 创建本地yum仓库
+使用createrepo来创建repository仓库，如果系统里没有该命令的话需要先进行createrepo的安装 yum install createrepo
+================
+Code
+----------------
+createrepo /tmp/offline_rpm
+================
+Text
+----------------
+创建好的仓库目录会出现 repodata子目录  将 /tmp/offline_rpm/下面全目录 使用SSH等文件传输工具如WinSCP拷贝出来至内网CentOS服务器上面进行安装。
+================
+Header
+----------------
+二、内网CentOS服务器安装Zabbix
+================
+Text
+----------------
+将 offline_rpm 文件夹传输至 内网主机 /tmp 下 /将etc/yum.repos.d 下面所有repo文件进行转移至bak文件夹下  新建一个repo文件
+================
+Code
+----------------
+# vim /etc/yum.repos.d/new.repo
+================
+Text
+----------------
+写入如下内容保存并退出
+================
+Code
+----------------
+[New]
+name=New
+baseurl=file:///tmp/offline_rpm
+gpgcheck=0
+enabled=1
+================
+Text
+----------------
+清理yum
+================
+Code
+----------------
+# yum clean all
+================
+Text
+----------------
+从这里向下，开始按照常规步骤安装即可 使用yum将会自动使用本地的yum仓库
+================
+Code
+----------------
+# yum -y install zabbix-server-mysql zabbix-agent
+#yum -y install mariadb-server.x86_64
+================
+Text
+----------------
+Software collections是一个Linux软件多版本共存的解决方案。
+================
+Code
+----------------
+# yum install centos-release-scl
+# yum install zabbix-web-mysql-scl zabbix-apache-conf-scl
+================
+Header
+----------------
+配置数据库
+================
+Code
+----------------
+systemctl enable mariadb.service
+systemctl start mariadb.service
+================
+Text
+----------------
+mysql安全配置向导
+================
+Code
+----------------
+--为root用户设置密码
+--删除匿名账号
+--取消root用户远程登录
+--删除test库和对test库的访问权限
+--刷新授权表使修改生效
+
+ mysql_secure_installation
+================
+Text
+----------------
+数据库zabbix用户相关
+================
+Code
+----------------
+# mysql -uroot -p123456
+修改数据库字符集 
+mysql> create database zabbix character set utf8 collate utf8_bin;
+创建数据库
+mysql> create user zabbix@localhost identified by '123456';
+用户授权
+mysql> grant all privileges on zabbix.* to zabbix@localhost;
+mysql> quit;
+================
+Text
+----------------
+导入初始架构和数据 查看sql文件路径
+================
+Code
+----------------
+查看sql文件路径
+# rpm -ql zabbix-server-mysql
+浏览到目录并解压缩
+cd /usr/share/doc/zabbix-server-mysql-5.0.2/
+gzip -d create.sql.gz
+导入数据
+mysql -uzabbix -pgoertek zabbix <create.sql
+================
+Text
+----------------
+修改 zabbix-server 和 php配置文件
+编辑 zabbix_server.conf
+================
+Code
+----------------
+# vim /etc/zabbix/zabbix_server.conf
+找到对应项有注释则取消：
+DBHost= localhost
+DBName = zabbix
+DBuser= zabbix
+DBpassword = 123456
+================
+Text
+----------------
+编辑php配置文件
+================
+Code
+----------------
+# vim /etc/opt/rh/rh-php72/php-fpm.d/zabbix.conf
+================
+Text
+----------------
+更改时区 取消下面配置项前面注释“；” 更改为Asis/Shanghai
+================
+Code
+----------------
+php_value[date.timezone] = Asis/Shanghai
+================
+Header
+----------------
+最后的工作
+================
+Text
+----------------
+启动 zabbix服务和进程！
+================
+Code
+----------------
+启动服务
+# systemctl restart zabbix-server zabbix-agent httpd rh-php72-php-fpm
+设置开机自启
+# systemctl enable zabbix-server zabbix-agent httpd rh-php72-php-fpm
+================
+Text
+----------------
+查看zabbix服务器日志
+================
+Code
+----------------
+# vim /var/log/zabbix_server.log
+================
+Text
+----------------
+常见问题：
+问题1： cannot start preprocessing service: Cannot bind socket to “/var/run/zabbix/zabbix_server_preprocessing.sock”: [13] Permission denied. 解决： 关闭系统防火墙：
+systemctl stop firewalld.service #停止firewall systemctl disable firewalld.service #禁止firewall开机启动 重启 zabbix 服务： systemctl start zabbix-server zabbix-agent httpd 问题2： cannot start alert manager service: Cannot bind socket to “/var/run/zabbix/zabbix_server_alerter.sock”: [13] Permission denied. 解决： 关闭selinux： 修改 etc/selinux/config 设置SELINUX=disabled 重启系统 setenforce 0（如果不想重启服务器可以运行此命令）。#使配置升效。 重启 zabbix 服务： systemctl start zabbix-server zabbix-agent httpd
+完成
+安装成功，至此CentOS7 离线安装 ZABBIX 5.0 结束！
+by CN_PEAK_HAO & MH8888  2020/07/14
+================
+Title
+----------------
+No enclosing instance of type **
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a960151a/article/details/86512092
+================
+Stars
+----------------
+0
+================
+Text
+----------------
+public static void main(String[] args) { ExecutorService e = Executors.newCachedThreadPool(); e.execute(new test1()); } class test1 implements Runnable{ public void run(){ System.out.println(“毛二狗”); } } 在class 前加个static就可以了
+================
+Title
+----------------
+Mac 终端提示You have not agreed to the Xcode license agreements
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a542551042/article/details/46490799
+================
+Stars
+----------------
+3
+================
+Text
+----------------
+在mac 终端运行命令的时候会被提示没有同意xcode 证书 ，这个时候需要在Terminal中同意license
+打开终端输入xcodebuild -license，会看到一大堆的license说明，直接按下空格跳过
+之后根据提示输入agree ，回车就搞定了
+================
+Title
+----------------
+c语言数据结构之实现一元多项式的加减运算
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/79302671
+================
+Stars
+----------------
+27
+================
+Text
+----------------
+实现结构：单项链表
+思路：对于两个一元多项式中所有指数相同的项，对应系数相加，若其和不为零，则构成“和多项式”中的一项；对于两个一元多项式中所有指数不相同的项，则分别复抄到“和多项式”中去，减法亦然。
+main.c
+================
+Code
+----------------
+#include <stdio.h>
+#include <malloc.h>
+#include "poly.h"
+#include "lArray.h"
+
+void printInfo();
+void eatline();
+void choose_option();
+
+void poly_exp_add(polyLinkList *ptr);
+
+void poly_exp_view(polyLinkList *ptr);
+
+void poly_exp_del(polyLinkList *ptr);
+
+void poly_addition(polyLinkList *ptr);
+
+void poly_sub(polyLinkList *ptr);
+
+int main() {
+    printInfo();
+    choose_option();
+    return 0;
+}
+
+void printInfo()
+{
+    printf("一元多项式的运算-----------------------\n");
+    printf("0.添加一元表达式.\n");
+    printf("1.查看表达式列表.\n");
+    printf("2.删除一个表达式.\n");
+    printf("3.一元多项式的加法.\n");
+    printf("4.一元多项式的减法.\n");
+    printf("6.退出.\n");
+    printf("-------------------------------------\n");
+}
+
+void choose_option()
+{
+
+    polyLinkList Poly_Link_List;
+
+    initPolyLinkList(&Poly_Link_List);
+
+    int d;
+
+    do{
+        scanf("%d",&d);
+        eatline();
+        switch(d)
+        {
+            case 0://添加一元表达式
+                poly_exp_add(&Poly_Link_List);
+                break;
+            case 1://查看表达式列表
+                poly_exp_view(&Poly_Link_List);
+                break;
+            case 2://删除一个表达式
+                poly_exp_del(&Poly_Link_List);
+                break;
+            case 3://一元多项式的加法
+                poly_addition(&Poly_Link_List);
+                break;
+            case 4://一元多项式的减法
+                poly_sub(&Poly_Link_List);
+                break;
+            case 6://退出
+                break;
+            default:
+                break;
+        }
+
+        printf("->");
+    }while(d != 6);
+}
+
+void poly_sub(polyLinkList *ptr) {
+    int id1;
+    int id2;
+    char strExp[100] = "\0";
+
+    poly_exp_view(ptr);
+    printf("\n");
+    printf("请输入要进行减法运算的id1和id2，以\",\"隔开,并按下回车键\n");
+
+    printf("例子:1,2\n");
+    printf("->");
+    while(scanf("%d,%d",&id1,&id2) == 2)
+    {
+        struct polyNode * p1 = findById(ptr,id1);
+        struct polyNode * p2 = findById(ptr,id2);
+        if(p1 && p2)
+        {
+            subtractPoly(p1->linkList,p2->linkList);
+            printPolyn(p1->linkList,strExp);
+            printf("结果:%s\n",strExp);
+            printf("要退出请按任意键并敲下回车，不退出请继续输入表达式的id,eg:1,2\n");
+            printf("->");
+            strExp[0] = '\0';
+        }else{
+            printf("两个表达式有一个id不存在，请重新输入.\n");
+            printf("->");
+        }
+        eatline();
+    }
+    eatline();
+    printf("操作取消.\n");
+
+}
+
+void poly_addition(polyLinkList *ptr) {
+    int id1;
+    int id2;
+    char strExp[100]="\0";
+    poly_exp_view(ptr);
+    printf("\n");
+    printf("请输入要进行加法运算的id1和id2，以\",\"隔开，并按下回车键\n");
+
+    printf("例子:1,2\n");
+    printf("->");
+    while(scanf("%d,%d",&id1,&id2) == 2)
+    {
+        struct polyNode * p1 = findById(ptr,id1);
+        struct polyNode * p2 = findById(ptr,id2);
+
+        if(p1 && p2)
+        {
+            addPolyn(p1->linkList,p2->linkList);
+            printPolyn(p1->linkList,strExp);
+            printf("结果:%s\n",strExp);
+            printf("要退出请按任意键并敲下回车，不退出请继续输入表达式的id,eg:1,2\n");
+            printf("->");
+            strExp[0] = '\0';
+        }else{
+            printf("两个表达式有一个id不存在，请重新输入.\n");
+            printf("->");
+        }
+
+        eatline();
+    }
+    eatline();
+    printf("操作取消.\n");
+}
+
+void poly_exp_del(polyLinkList *ptr) {
+    int id;
+    printf("请输入要删除节点的id:");
+    if(scanf("%d",&id) == 1)
+    {
+        polyLinkList_remove(ptr,id);
+    }
+    eatline();
+}
+
+void poly_exp_view(polyLinkList *ptr) {
+    struct polyNode ** pnList = findAll(ptr);
+    int i = 0;
+    printf("------------------------------------\n");
+    printf("|   id   |           表达式         |\n");//36-2-(id)-(表达式) = 29
+    char strExp[100]="\0"; //表达式空间
+    for(;i<ptr->length;i++)
+    {
+        printPolyn(pnList[i]->linkList,strExp);
+        printf("|%8d|%23s  |\n",pnList[i]->id,strExp);
+        strExp[0]='\0';
+
+    }
+
+    printf("------------------------------------\n");
+}
+
+//表达式添加
+void poly_exp_add(polyLinkList *ptr) {
+
+    struct polyNode * pnode = (struct polyNode * )malloc(sizeof(struct polyNode));
+
+    LinkList * linkList = (LinkList * )malloc(sizeof(LinkList));
+
+    Term term;
+    int j = 1;
+
+    printf("请输入表达式的系数n和指数e并以逗号\",\"隔开,格式:n,e\n");
+    printf("结束输入请输入任意数字并回车.\n");
+    printf("请输入%d项:",j);;
+
+    while(scanf("%d,%d",&term.n,&term.e) == 2)
+    {
+        eatline();
+        createPolyn(linkList,term);
+        printf("请输入%d项:",++j);
+    }
+    if(j!=1)//至少输入了一项
+    {
+
+        pnode->id = ptr->length+1;
+        pnode->linkList = linkList;
+
+        polyLinkList_add(ptr,pnode);
+    }
+
+    eatline();
+}
+
+void eatline()
+{
+    while(getchar() != '\n')
+        continue;
+}
+================
+Text
+----------------
+poly.h
+================
+Code
+----------------
+#ifndef _POLY_H_
+#define _POLY_H_
+
+#include <stdbool.h>
+typedef struct{
+    int n;//系数
+    int e;//指数
+}Term;
+
+typedef struct node{
+    Term term;
+    struct node * next;//下一节点
+}Node;
+
+typedef struct{
+    int length;
+    Node * head;
+}LinkList;
+
+void createPolyn(LinkList * pLinkList,Term term);
+void destroyPolyn(LinkList * pLinkList);
+void printPolyn(LinkList * pLinkList,char * strExp);
+int polynLength(LinkList * pLinkList);
+void addPolyn(LinkList * pa,LinkList * pb);
+void subtractPoly(LinkList * pa,LinkList * pb);
+void multiplyPolyn(LinkList * pa,LinkList * pb);
+int cmpTerm(Node * pa,Node *pb);
+#endif
+================
+Text
+----------------
+poly.c
+================
+Code
+----------------
+#include <stdlib.h>
+#include <malloc.h>
+#include <string.h>
+#include "poly.h"
+
+/**
+ * 创建一元多项式
+ * @param pLinkList
+ * @param term
+ */
+void createPolyn(LinkList *pLinkList,Term term) {
+
+    Node * pn = NULL;
+    if(pLinkList->head)
+    {
+        pn = pLinkList->head;
+
+        while(pn->next)
+            pn = pn->next;
+
+        pn->next = (Node *)malloc(sizeof(Node));
+        pn->next->term = term;
+    }else{
+        pn = (Node *)malloc(sizeof(Node));
+        pLinkList->head = pn;
+        pn->term = term;
+    }
+
+     pLinkList->length++;
+}
+
+/**
+ * 销毁一元多项式
+ * @param pLinkList
+ */
+void destroyPolyn(LinkList *pLinkList) {
+    Node * pn = pLinkList->head;
+    Node * ptemp;
+    while(pn)
+    {
+        ptemp = pn;
+        pn = pn->next;
+        free(ptemp);
+    }
+}
+
+/**
+ * 打印表达式
+ * @param pLinkList
+ */
+void printPolyn(LinkList *pLinkList,char * strExp) {
+    Node * pn = pLinkList->head;
+    char strTemp[50];
+    bool isFirstPlus = true;//去除表达式第一个加号
+
+    while(pn)
+    {
+        if(pn->term.e == 0){
+            if(pn->term.n != 0){
+                if(pn->term.n > 0){
+                    if(isFirstPlus){
+                        sprintf(strTemp,"%d",pn->term.n);
+                    }
+                    else{
+                        sprintf(strTemp,"+%d",pn->term.n);
+                    }
+                }
+                else if(pn->term.n < 0){
+                    sprintf(strTemp,"%d",pn->term.n);
+                }
+                isFirstPlus = false;
+                strcat(strExp,strTemp);
+            }
+        }else{
+            if(pn->term.n < 0){
+                if(pn->term.e == 1)
+                    sprintf(strTemp,"%dX",pn->term.n);
+                else
+                    sprintf(strTemp,"%dX^%d",pn->term.n,pn->term.e);
+                isFirstPlus = false;
+                strcat(strExp,strTemp);
+            }else if(pn->term.n > 0) {
+                if(pn->term.n == 1)
+                    if(pn->term.e == 1)
+                        if(isFirstPlus)
+                            sprintf(strTemp, "X");
+                        else
+                            sprintf(strTemp, "+X");
+                    else
+                        if(isFirstPlus)
+                            sprintf(strTemp, "X^%d", pn->term.e);
+                        else
+                            sprintf(strTemp, "+X^%d", pn->term.e);
+                else
+                    if(pn->term.e == 1)
+                        if(isFirstPlus)
+                            sprintf(strTemp, "%dX", pn->term.n);
+                        else
+                            sprintf(strTemp, "+%dX", pn->term.n);
+                    else
+                        if(isFirstPlus)
+                            sprintf(strTemp, "%dX^%d", pn->term.n, pn->term.e);
+                        else
+                            sprintf(strTemp, "+%dX^%d", pn->term.n, pn->term.e);
+                isFirstPlus = false;
+                strcat(strExp,strTemp);
+            }
+        }
+        pn = pn->next;
+    }
+}
+
+/**
+ * 获取表达式项数
+ * @param pLinkList
+ * @return
+ */
+int polynLength(LinkList *pLinkList) {
+    if(pLinkList)
+        return pLinkList->length;
+    else
+        return 0;
+}
+
+/**
+ * 一元多项式的加法运算
+ * @param pa
+ * @param pb
+ * @return 将pa = pa + pb,pa、pb无用的释放掉.
+ */
+void addPolyn(LinkList *pa, LinkList *pb) {
+    Node *na,*nb,*temp,*pre=NULL;
+    na = pa->head;
+    nb = pb->head;
+
+    while(na && nb)
+    {
+        if(cmpTerm(na,nb) == -1) {
+            pre = na;
+            na = na->next;
+        }
+        else if(cmpTerm(na,nb) == 0)
+        {
+            if(na->term.n + nb->term.n != 0)
+            {
+                na->term.n+=nb->term.n;
+                temp = nb;
+                nb = nb->next;
+                pre = na;
+                na = na->next;
+                free(temp);
+            }else{
+                temp = na;
+                na = na->next;
+                if(!pre)//当位于第一个节点时候
+                    pa->head = na;
+                else
+                    pre->next = na;
+                free(temp);
+                temp = nb;
+                nb = nb->next;
+                free(temp);
+            }
+        }else{
+            temp = nb->next;
+            nb->next = na;
+            if(!pre)
+                pa->head = nb;
+            else
+                pre->next = nb;
+            nb = temp;
+        }
+    }
+
+    if(nb)//如果b还有剩余节点
+    {
+        pre->next = nb;//链接剩余节点
+    }
+}
+
+/**
+ * 一元多项式的减法运算
+ * @param pa
+ * @param pb
+ * @return
+ */
+void subtractPoly(LinkList * pa,LinkList * pb)
+{
+    Node *na,*nb,*temp = NULL, *pre = NULL;
+    na = pa->head;
+    nb = pb->head;
+
+    while(na && nb)
+    {
+        if(cmpTerm(na,nb) == -1)
+        {
+            pre = na;
+            na = na->next;
+        }else if(cmpTerm(na,nb) == 0)
+        {
+            if(na->term.n - nb->term.n != 0)
+            {
+                na->term.n -= nb->term.n;
+                temp = nb;
+                nb = nb->next;
+                free(temp);
+                pre = na;
+                na = na->next;
+            }else{
+
+                if(!pre)
+                    pa->head = na->next;
+                else
+                    pre->next = na->next;
+
+                temp = na;
+                na = na->next;
+                free(temp);
+
+                temp = nb;
+                nb = nb->next;
+                free(temp);
+            }
+        }else{
+            nb->term.n = -nb->term.n;
+            temp = nb->next;
+            nb->next = na;
+            if(!pre)
+                pa->head = nb;
+            else
+                pre->next = nb;
+            nb = temp;
+        }
+    }
+
+    if(nb)
+    {
+        pre->next = nb;
+        while(nb)
+        {
+            nb->term.n = -nb->term.n;
+            nb = nb->next;
+        }
+    }
+}
+
+/**
+ * 一元多项式的乘法运算
+ * @param pa
+ * @param pb
+ * @return
+ */
+void multiplyPolyn(LinkList * pa,LinkList * pb)
+{
+
+}
+
+/**
+ * 比较ta 和 tb 指数的大小关系，分别返回 1,0,-1
+ * @param ta
+ * @param tb
+ * @return
+ */
+int cmpTerm(Node * pa,Node *pb)
+{
+    if(pa->term.e > pb->term.e)
+        return 1;
+    else if(pa->term.e == pb->term.e)
+        return 0;
+    else
+        return -1;
+}
+================
+Text
+----------------
+lArray.h
+================
+Code
+----------------
+#ifndef _L_ARRAY_H_
+#define _L_ARRAY_H_
+#include "poly.h"
+
+struct polyNode{
+    int id;
+    LinkList * linkList;
+    struct polyNode * next;
+};
+
+typedef struct{
+    struct polyNode * head;
+    int length;
+    struct polyNode * tail;//当前链表的尾节点
+}polyLinkList;
+
+void initPolyLinkList(polyLinkList * pll);
+void polyLinkList_add(polyLinkList * pll,struct polyNode * pnode);
+void polyLinkList_remove(polyLinkList * pll,int id);
+void polyLinkList_update(polyLinkList * pll, struct polyNode * pnode);
+struct polyNode * findById(polyLinkList * pll, int id);
+
+/**
+ * 查找数组内所有节点
+ * @param pll
+ * @return 返回首节点指针
+ */
+struct polyNode ** findAll(polyLinkList * pll);
+
+#endif
+================
+Text
+----------------
+lArray.c
+================
+Code
+----------------
+#include "lArray.h"
+#include <stdlib.h>
+
+void initPolyLinkList(polyLinkList * pll)
+{
+    pll->tail = NULL;
+    pll->length = 0;
+    pll->head = NULL;
+}
+
+void polyLinkList_add(polyLinkList * pll,struct polyNode * pnode)
+{
+    if(!pll->tail)//如果尾部指针为空，说明链表没有元素
+    {
+        pll->head = pnode;
+        pll->tail = pnode;
+    }else{
+        pll->tail->next = pnode;
+        pll->tail = pnode;
+    }
+    pll->length++;
+}
+
+void polyLinkList_remove(polyLinkList * pll,int id)
+{
+    struct polyNode * node = pll->head;
+    if(node)
+    {
+        if(node->id == id)//首节点即是需要删除的节点
+        {
+            pll->head = node->next;
+            free(node);
+            pll->length--;
+        }else{
+            while(node->next)
+            {
+                if(node->next->id == id)
+                {
+                    free(node->next);
+                    node->next = node->next->next;
+                    pll->length--;
+                    break;
+                }
+                node = node->next;
+            }
+        }
+
+    }
+}
+
+/**
+ * 根据节点的id来更新
+ * @param pll
+ * @param pnode
+ */
+void polyLinkList_update(polyLinkList * pll, struct polyNode * pnode)
+{
+    if(pnode){
+        struct polyNode * node = findById(pll,pnode->id);
+        node->linkList = pnode->linkList;
+    }
+}
+struct polyNode * findById(polyLinkList * pll, int id)
+{
+    struct polyNode * node = pll->head;
+    while(node)
+    {
+        if(node->id == id)
+            return node;
+        node = node->next;
+    }
+
+    return NULL;
+}
+
+/**
+ * 查找数组内所有节点
+ * @param pll
+ * @return 返回首节点指针,用完记得释放
+ */
+struct polyNode ** findAll(polyLinkList * pll)
+{
+    if(pll){
+        if(pll->length != 0)
+        {
+            struct polyNode ** pnArray = (struct polyNode **)malloc(sizeof(struct polyNode *)*pll->length);
+            struct polyNode * node = pll->head;
+            int i = 0;
+            while(node)
+            {
+                *(pnArray+i) = node;
+                node = node->next;
+                i++;
+            }
+            return pnArray;
+        }
+    }
+
+    return NULL;
+}
+================
+Text
+----------------
+测试用例： 12X^12+12X^14+12X^17 21X^12+243X^14+1223X^123321
+进行减法操作：-9X^12-231X^14+12X^17-1223X^123321
+因为时间比较紧张，所以只是实现了一元多项式的加减法运算，乘除法运算没有实现。
+================
+Title
+----------------
+解决mybatis 模糊查询mysql   中文无法查询到结果的问题
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a960151a/article/details/84589376
+================
+Stars
+----------------
+0
+================
+Text
+----------------
+解决mybatis 模糊查询mysql 中文无法查询到结果的问题 一种原因是字符编码问题 可以修改mysql安装目录下面的my.ini文件 将default-character-set=utf-8 character-set-server=utf8 重启Mysql 用管理员方式启动 cmd 窗口，执行如下语句：
+使用命令语句“net stop mysql” 停止 mysql 服务 使用命令语句“net start mysql” 启动 mysql 服务
+================
+Title
+----------------
+简述raid 0 1 5 10的区别
+================
+License
+----------------
+None
+================
+Stars
+----------------
+43
+================
+Header
+----------------
+一、RAID卡概述
+================
+Text
+----------------
+1、DELL阵列卡（RAID卡）
+RAID是英文Redundant Array of Independent Disks的缩写，中文简称为独立冗余磁盘阵列。简单的说，RAID是一种把多块独立的硬盘（物理硬盘）按不同的方式组合起来形成一个硬盘组（逻辑硬盘），从而提供比单个硬盘更高的存储性能和提供数据备份技术。
+组成磁盘阵列的不同方式称为RAID级别（RAID Levels）。
+集中管理思想：资源整合，用统一标准进行管理
+2、基本作用：
+网站数据量很大的时候，单块盘装不下了，购买多块盘，又不想单个存放数据，就需要把所有硬盘整合成一个大磁盘，再在这个大磁盘上在分区（虚拟磁盘）放数据。
+另外一个功能，多块磁盘放在一起可以有冗余（备份）。
+3、特点（和硬盘做对比）
+相同之处：组成的磁盘组就像是一个硬盘，用户可以对它进行分区，格式化等等。总之，对磁盘阵列的操作与单个硬盘一模一样。
+不同之处：磁盘阵列的存储速度要比单个硬盘高很多，而且可以提供自动数据备份。数据备份的功能是在用户数据一旦发生损坏后，利用备份信息可以使损坏数据得以恢复，从而保障了用户数据的安全性。
+================
+Header
+----------------
+二、RAID有多种整合方式，主要有：RAID 0 1 5 10
+================
+Text
+----------------
+有RAID卡后，一般磁盘就会插到RAID卡上，而不是插到主板上了。
+优点：读写都很快
+1、企业应用
+不同RAID级别的企业应用举例：根据数据的存储和访问的需求，去选择RAID
+互联网公司服务器一般都会买RAID卡（主板自带，独立RAID卡），RAID卡上也是有缓存的。
+1、主要性能排序：
+冗余从好到坏：raid 1 raid 10 raid 5 raid 0
+性能从好到坏：raid 0 raid 10 raid 5 raid 1
+成本从低到高：raid 0 raid 5 raid 1 raid 10
+2、RAID类型的选择
+单台服务器,很重要，盘不多，系统盘raid1
+数据库/存储服务器，主库raid10，从库raid5/raido（为了维护成本，raid10）
+web服务器，如果没有太多的数据的话，raid5，raid0（单盘）
+有多台监控/应用服务器raid5，raid0
+2、RAID 0 1 5 10 简单区别
+类型
+RAID0
+RAID1
+RAID5 （raid0 和raid的折中方案）
+RAID10 （RAID0+1镜像阵列条带）
+读写
+性能
+最好（因并行性而提高）
+读和单个磁盘无分别，写则要写两边
+读：RAID 5＝RAID 0（相近似的数据读取速度）写：RAID 5<对单个磁盘进行写入操作（多了一个奇偶校验信息写入）
+读：RAID10＝RAID0（数据跨盘抽取）写：RAID10＝RAID1（每个磁盘都有一个镜像磁盘）
+安全性
+最差（毫无安全保障）1/n
+最高（提供数据的百分之百备份）
+RAID 0＜RAID 5＜RAID 1
+RAID10＝RAID1
+冗余
+类型
+没有
+有  镜像100%（mirror）
+奇偶校验
+有  镜像100%（mirror）
+磁盘
+数量
+2或2*n（这里至少2个）
+≥2
+≥3
+≥4
+连接
+方式
+串联
+并联
+并联
+符合并联（先做两个RAID1然，再并联按照RAID1）
+磁盘利用率
+最高（100％）
+差（50％）
+RAID0＞RAID 5>RAID 1 （n-1）*10
+RAID10＝RAID1（50％）
+容错率
+没有错误修复能力
+随机/连续写性能
+管理方便性
+容易
+出现问题，及时更换问题硬盘
+成本
+最低
+最高
+RAID 5<="">
+RAID10＝RAID1
+应用
+方面
+普通个人用户，图形工作站（对性能要求高，安全率要求不高）
+适用于存放重要数据，如服务器和数据库存储等领域。
+是一种存储性能、数据安全和存储成本兼顾的存储解决方案。（随机数据传输要求安全性高）应用领域：金融、数据库存储等
+集合了RAID0，RAID1的优点，但是空间上由于使用镜像，而不是类似RAID5的“奇偶校验信息”，磁盘利用率一样是50％
+使其特别适用于既有大量数据需要存取，同时又对数据安全性要求严格的领域，如银行、金融、商业超市、仓储库房、各种档案管理等。
+3、详述RAID 0 1 5 10
+1、RAID 0
+又称为Stripe或Striping，它代表了所有RAID级别中最高的存储性能。
+RAID 0提高存储性能的原理是把连续的数据分散到多个磁盘上存取，这样，系统有数据请求就可以被多个磁盘并行的执行，每个磁盘执行属于它自己的那部分数据请求。
+这种数据上的并行操作可以充分利用总线的带宽，显著提高磁盘整体存取性能
+2、RAID 1
+又称为Mirror或Mirroring，它的宗旨是最大限度的保证用户数据的可用性和可修复性。
+RAID 1的操作方式是把用户写入硬盘的数据百分之百地自动复制到另外一个硬盘上。
+由于对存储的数据进行百分之百的备份，在所有RAID级别中，RAID 1提供最高的数据安全保障。同样，由于数据的百分之百备份，备份数据占了总存储空间的一半，因而，Mirror的磁盘空间利用率低，存储成本高。
+Mirror虽不能提高存储性能，但由于其具有的高数据安全性，使其尤其适用于存放重要数据，如服务器和数据库存储等领域。
+3、RAID 5
+一种存储性能、数据安全和存储成本兼顾的存储解决方案。
+RAID 5不对存储的数据进行备份，而是把数据和相对应的奇偶校验信息存储到组成RAID5的各个磁盘上，并且奇偶校验信息和相对应的数据分别存储于不同的磁盘上。当RAID5的一个磁盘数据发生损坏后，利用剩下的数据和相应的奇偶校验信息去恢复被损坏的数据。
+RAID 5可以理解为是RAID 0和RAID 1的折衷方案。
+RAID 5可以为系统提供数据安全保障，但保障程度要比Mirror低而磁盘空间利用率要比Mirror高。
+RAID 5具有和RAID 0相近似的数据读取速度，只是多了一个奇偶校验信息，写入数据的速度比对单个磁盘进行写入操作稍慢。同时由于多个数据对应一个奇偶校验信息，RAID 5的磁盘空间利用率要比RAID 1高，存储成本相对较低
+4、RAID0+1
+正如其名字一样RAID 0+1是RAID 0和RAID 1的组合形式，也称为RAID 10。
+RAID 0+1是存储性能和数据安全兼顾的方案。它在提供与RAID 1一样的数据安全保障的同时，也提供了与RAID 0近似的存储性能。
+由于RAID 0+1也通过数据的100%备份提供数据安全保障，因此RAID 0+1的磁盘空间利用率与RAID 1相同，存储成本高。
+RAID 0+1的特点使其特别适用于既有大量数据需要存取，同时又对数据安全性要求严格的领域，如银行、金融、商业超市、仓储库房、各种档案管理等。
+================
+Title
+----------------
+Python WxPython 的安装以及使用
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a542551042/article/details/46454107
+================
+Stars
+----------------
+0
+================
+Text
+----------------
+WxPython 网址  学习网址  http://wiki.wxpython.org/How%20to%20Learn%20wxPython
+安装网址  http://wiki.wxpython.org/How%20to%20install%20wxPython
+wxPython Api  http://www.wxpython.org/docs/api/
+wxPython 新版本的名字更改为了wxPython-Phoenix ,并且内部定制了wxPython的常用对象库，方便使用，  安装的时候推荐安装wxPython-Phoenix
+推荐编辑器  https://www.jetbrains.com/pycharm/
+安装步骤  先安装python,之后安装pip,直接通过pip,安装wxPython-Phoenix
+安装pip 请参考  https://pypi.python.org/pypi/pip/
+之后输入安装命令，之后等待安装成功  sudo pip install –upgrade –pre -f http://wxpython.org/Phoenix/snapshot-builds/ wxPython_Phoenix
+================
+Title
+----------------
+InfluxDB 查询语言flux last()函数问题 last()返回不是最后一条数据
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a648642694/article/details/119483431
+================
+Stars
+----------------
+3
+================
+Text
+----------------
+昨日在使用InfluxDB的last() 函数查询一组数据时发现了一些问题。
+根据官方文档说明：
+last()函数从输入表中返回最后一个非空记录。 用于验证值是否存在的列。如果该列在最后一条记录中为空，则last()返回具有非空值的前一条记录。默认为"_value"。
+所以我理所应当认为只获取查询时间范围的最后一条（事实不是这样的）
+详细过程如下 flux如下 range时间范围 start为 当前时间向前24小时
+================
+Code
+----------------
+from(bucket: "MDCS")
+    |> range(start: -24h)
+    |> filter(fn: (r) => r["_measurement"] == "mqtt_consumer" and r._field == "v_03" and r.topic == "mdc")
+    |> last()
+================
+Text
+----------------
+查询出两条数据 节点A的数据为 2557381 节点B的数据为 2555926  导出csv表格显示此数据的时间，很明显不是最后一条
+A设备：（注意看左侧table序号）
+B设备：（注意看左侧table序号）
+当我将范围时间时间分别更改为 range(start: -2h);1m;1h;2h;5h 后 这个数值是正确最后一条数据， 那么为什么 范围的起始时间加大 last()就不是最后一条数据了？
+根据导出的原始数据时间我们发现last()查询出来的值都为8月6号的23:59分，都是时间范围起始当天的最后一条数据，这一点很奇怪，官方文档并没有说明。 按理来说结果会返回每个表的最后一条，但是根据上面的过程发现，last()返回的结果并不是单个表最后一个数据而是当天的最后一条？？（这也是我觉得有问题的关键点！）
+在网上搜索相关问题没有任何答案。
+于是我再 github 的问题区找到了类似的问题  我尝试了一下： 加入了 group()
+================
+Code
+----------------
+from(bucket: "MDCS")
+    |> range(start: -24h)
+    |> filter(fn: (r) => r["_measurement"] == "mqtt_consumer" and r._field == "v_03" and r.topic == "mdc")
+    |> group(columns:["mac","_field"])
+    |> last()
+================
+Text
+----------------
+再次查询发现结果正确了无论调整 range起始时间范围有多大都会取最后一条数据  总结：对于此问题，并没有找到真正的问题所在，一切看着好似都很正常，但查询出来却是错误的可能怀疑是bug，或者官方设定last()只能按日粒度进行查询但文档没有说明？在这里不得而知了，大家如有知道真正原因的可以留言或者评论告诉我。 不过使用group后确实可以解决问题，但查询性能也收到了略微影响。
+================
+Title
+----------------
+对安卓编码后的AndroidManifest.xml进行修改
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a648642694/article/details/127662840
+================
+Stars
+----------------
+0
+================
+Header
+----------------
+前言
+================
+Text
+----------------
+前段时间在安卓逆向过程中，要对已经进行编码后的AndroidManifest.xml文件，进行修改，但是在网上找了找工具都不是很好用，所以就去找，不错找到了这个工具
+他可以将整个axml二进制文件解码为常规xml保存为文件，在使用文本编辑完成后，再将xml编码为axml二进制文件，还是很好用的。前来分享一下~
+使用方法也很简单:
+================
+Code
+----------------
+java -jar xml2axml.jar e [AndroidManifest-readable-in.xml] [AndroidManifest-bin-out.xml]
+java -jar xml2axml.jar d [AndroidManifest-bin-in.xml] [AndroidManifest-readable-out.xml]
+================
+Text
+----------------
+发现编码后AndroidManifest.xml 打包进apk 在andorid上安装时提示解析包失败！ 这个的原因可能是由于，某个节点有 空字符串(“”)导致，将其移除再此编码问题即解决。
+================
+Title
+----------------
+c语言数据结构之顺序线性表的合并、并集
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/79307061
+================
+Stars
+----------------
+7
+================
+Text
+----------------
+运行结果:
+================
+Title
+----------------
+Python  自动化测试报告HTMLTestRunner
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a542551042/article/details/46744677
+================
+Stars
+----------------
+5
+================
+Link
+----------------
+http://tungwaiyip.info/software/HTMLTestRunner.html
+================
+Link
+----------------
+https://pypi.python.org/pypi/HTMLTestRunner
+================
+Text
+----------------
+环境准备  Mac: 下载HTMLTestRunner.py 文件，放在python的包文件夹下，目前使用的是Python 2.7.6  例如 ： /Library/Python/2.7/site-packages
+windows:下载HTMLTestRunner.py 文件,放在python目录下的lib文件夹  例如：C:\Python27\Lib
+代码示例
+================
+Code
+----------------
+# -*- coding:utf-8 -*-
+
+import unittest
+import HTMLTestRunner,sys,StringIO
+
+
+#测试用例
+
+class MyTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def testCase1(self):
+        self.assertEqual(2,2,"testError")
+
+    def testCase2(self):
+        self.assertEqual(2,3,"testError")
+
+#添加Suite
+
+def Suite():
+    suiteTest = unittest.TestSuite()
+    suiteTest.addTest(MyTestCase("testCase1"))
+    suiteTest.addTest(MyTestCase("testCase2"))
+    return suiteTest
+
+if __name__ == '__main__':
+    #确定生成报告的路径
+    filePath = "//Users//Mr_Chen//Desktop//PythonWork//pyResult.html"
+    fp = file(filePath,'wb')
+
+    #生成报告的Title,描述
+    runner = HTMLTestRunner.HTMLTestRunner(stream=fp,title='Python Test Report',description='This  is Python  Report')
+    runner.run(Suite())
+================
+Text
+----------------
+运行之后，在路径就可以查看到报告了，默认的HTMLTestRuner,不支持中文，所以还需要修改下编码方式
+================
+Title
+----------------
+大白菜U盘启动盘手动去除捆绑第三方赞助软件
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a648642694/article/details/105937409
+================
+Stars
+----------------
+17
+================
+Text
+----------------
+笔者最近在使用大白菜U盘安装微软官方Windows标准镜像后出现了大量第三方捆绑软件：
+笔者在早些年使用老毛桃U盘也有类似问题，这类启动盘将会以一个可执行程序加入刚刚安装好后的系统开机启动项内，在这个过程中程序会自动更改一个随机的名字（这个做法和病毒木马很像），据观察大多数以大写字母开头，系统刚刚安装完毕在第一次进入系统后立即会运行此程序，此程序会预定设置好目录下的大量的第三方软件进行安装。这时也就会看到桌面在不停的出现刚刚安装的捆绑程序。当捆绑程序全部安装完毕的时候执行程序会自我删除。
+解决方法两种：
+采用官方渠道，虽说对于捆绑软件目前可以使用官方的去除赞助商的方式进行去除，但是有些需要注册账号或者微信公众号获取密码等比较傻瓜的方式，网络上搜索到的方法大多是这种。
+手动去除 笔者在早些年做的启动盘官方并没有留此功能 所以当时也是受到其他文章影响方法是自行手动去除。 鉴于早期处理这种手动删除掉对应部署程序后即可。所以最近使用大白菜U盘也想使用最传统的方式准备如法炮制。对于此方法适用于大部分主流启动盘，但是需要一定的动手能力和识别能力。
+所以本文主要说明第二种方法分享一下过程
+================
+Header
+----------------
+正文
+================
+Text
+----------------
+我们先看看这个捆绑安装的特征： 刚刚安装完微软标准Win10企业版系统镜像在第一次开机 计算机启动项中出现一串随机字母+数字组合的程序 看样子作者很狡猾居然玩起了改名术据我分析每次安装完毕系统名字都会不同应该是随机生成。右下角还有系统正在部署,请耐心等待字样。  桌面图标还在不停的增加，大量捆绑第三方软件出现，顺势找到安装程序目录如下安装程序加一起占用将近200M磁盘空间，并且观察部署程序会安装完毕一个删除一个。  我们找到部署程序进程定位到文件查看一下发现它再Windows目录下面，我立刻将其Copy一下，待会分析一下。不料很快所有捆绑软件安装完成它已将自己删除掉了。看特征这个就是主要的部署程序消灭它应该就可以达到目的，我们需要从根源消除。
+首先我们打开FbinstTool1.6 并将U盘插入电脑 查看启动盘内部的一些文件鉴于我查看捆绑软件总体积应当在100M以上所以我以大文件入手 我在IMGS列表中发现一个极为可疑的Important.IMG文件 我将其导出，我并不能打开它。  找了一圈并没有发现 100M以上可疑的对象，我准备将他先删除掉试试。将他删除后我重新测试安装系统。顿时的第三方捆绑软件安装程序目录是空的了，确实捆绑软件已经不见了。成功将捆绑软件移除，但是我发现它的部署程序依旧在运行 虽然没有安装包了但是部署程序依旧傻傻的工作，于是乎我又开始寻找这个 大写字母加数字开头的部署程序的源头。
+首先我们进入PE系统来寻找一下可疑文件 不料 在System32目录下找到了一个名字为NUML0CK.EXE的 非常可疑的可执行文件
+Win2003PE 下也有
+不错！我们查看属性以及大小哈希计算一下确认和大写字母部署为同一程序！  那么我们着手将他干掉。因为我们运行的PE是临时加载在内存中的所以在PE中删除掉这个文件将没有任何作用，下次进入PE仍然会有，所以根据经验我们需要修改PE源镜像。
+下面我们开始找源镜像 使用FbinstTool 我们打开左侧PE目录 看到了DBC2003和DBC8x64 这正好对应Win2003pe 和 Win8pe 两个镜像  我们可以点击Qemu测试 可以看到对应的启动盘菜单 对应的项目我们可以更改但不在本文范畴。
+我们将 DBC2003.ISO和DBC8x64.ISO光盘镜像右键导出的对应目录下 先来修改Win8这个 通过UltraISO软碟通 加载DBC8x64.ISO镜像定位到PE目录下看到了名为DBC8x64.WIM映像文件 再将DBC8x64.WIM文件进行提取出来。通过WimTool工具进行解包  使用WimTool解开映像 选择好对应的文件和解包的目录  我们点击解开映像在对应目录下面看到了解包后的文件，这个就是我们运行PE系统的系统盘中的文件，我们进入子目录里面看看能否找到一些端倪。  在Windows和System32目录下面并没有发现可疑的安装程序部署文件
+在System32目录下面按照 修改日期排序 最晚的也是2017年的这并不符合我们之前出现的大写首字母的部署程序。那个程序最近修改日期是2018年之后。（笔者当前系统时间位2020年）  既然我们在PE环境下的System32目录下面发现了对应的程序那么在这个PE镜像静态解包后却找不到，那么也就是能反映 此程序是通过PE系统运行后进行Copy到System32目录下面的，那么源程序到底在哪呢。我们继续搜其他文件夹 在我翻遍所有目录时候唯独发现Windows目录下Packages文件夹异常的可疑  其内容为7Z后缀名的压缩包，尝试打开却提示需输入密码 见此状况尤为可疑,我立即将PF.7z文件删除掉重新打包所有镜像将DBC8x64.ISO替换，准备U盘引导看看系统有何反映。  进入PE过程中一路顺利，很快就到了PE桌面在在加载程序，我立刻发现 桌面附带的一些软件少了很多几乎全部不见了。那么我内心立即清楚此7z压缩包为PE解包相应软件的母体。 那么我看到System32.7z的大小为 5087kb这个体积和之前部署程序的体积尤为接近 几乎就是5M左右。于是乎我毫不犹豫的删除掉了System32.7z ，同样从新打包镜像，进入PE系统 来到System32目录下面 没错NUML0CK.exe确实不见了。
+再来安装系统测试 发现没有问题，不会出现 部署程序了。就此 大白菜启动盘清除捆绑软件工作完毕。可以放放心心装系统了。 新安装的官方镜像没有任何捆绑软件。一切OK。  Win2003PE镜像 我也进行了 处理方式大同小异。
+================
+Header
+----------------
+总结
+================
+Text
+----------------
+对于这种U盘启动盘 老毛桃、大白菜等免费供大家使用对于捆绑软件来换取收入最正常不过了。如果感觉此方法麻烦可以通过官方提供的方式进行解除。 对于其加密的压缩包密码、启动项的添加等，本文并没有深入分析。对于市面这类U盘启动盘其镜像一键安装程序内部定有蹊跷感兴趣的同学可以进行逆向分析。
+本文 仅供学习参考。
+================
+Code
+----------------
+2020/5/5
+																			 by MH8888
+================
+Title
+----------------
+windows下启动ORACLE
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a960151a/article/details/82850107
+================
+Stars
+----------------
+1
+================
+Text
+----------------
+CMD --> services.msc
+找到服务：OracleOraDb11g_home1TNSListener 与 OracleServiceORCL（注意其中的ORCL服务名）。 把两个服务启动即可。
+================
+Title
+----------------
+slf4j和log4j的关系
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/abcnull/article/details/104056726
+================
+Stars
+----------------
+1
+================
+Header
+----------------
+文章目录
+================
+Text
+----------------
+slf4j：simple log facade for java【简单的 java 日志门面】
+log4j：log for java【java 日志】
+功能
+slf4j：一个适配器，一个接口，通过调用它的方法统一来打印日志，只需要传入不同日志功能实现，比如 log4j 或者其他，当然这个传入也可以是通过底层操作
+log4j：真正实现了日志的功能的日志系统，类似这样的日志系统有很多
+打个比方
+假如有两个日志系统，一个是 A，另一个是 B，假如这里的 A 代表 log4j 日志系统
+由于是两套日志系统，二者日志输出方式不同，如下：
+================
+Code
+----------------
+// A 日志系统日志输出
+A.loginfo()
+// B 日志系统日志输出
+B.output()
+================
+Text
+----------------
+如果我们拥有了 slf4j 我们会怎么去做呢？
+================
+Code
+----------------
+Slf4j slf4j = new Slf4j(A);
+// 不区分日志系统进行日志输出
+log.info();
+================
+Text
+----------------
+实际上 slf4j 使用了工厂模式不会让你去直接 new 对象，再加上注解的使用，日志变得非常方便
+思考
+这种方式的好处是什么呢？那就是当改变日志系统的时候，代码可以做到不变
+================
+Title
+----------------
+【Arduino】入门篇——火焰报警器
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/weixin_43349929/article/details/105178380
+================
+Stars
+----------------
+25
+================
+Text
+----------------
+火焰报警器
+一、实验目的
+二、实验材料
+三、电路图
+四、实验步骤
+五、代码块
+六、实验结果
+================
+Header
+----------------
+一、实验目的
+================
+Text
+----------------
+火焰传感器（即红外接收三极管）是一种对火焰特别敏感的传感器。其利用红外线对火焰的敏感特性，用特制的红外线接收管来检测火焰，然后将火焰的亮度转化成电平信号供控制器处理。
+================
+Header
+----------------
+二、实验材料
+================
+Header
+----------------
+三、电路图
+================
+Header
+----------------
+四、实验步骤
+================
+Text
+----------------
+火焰传感器的负极(短脚)接到5V引脚，正极(长脚)连接10KΩ的电阻，电阻的另一端连接GND。传感器与电阻连接在一起并接入到开发板模拟输入A0引脚。蜂鸣器正极接开发板数字引脚8，负极接GND。
+================
+Header
+----------------
+五、代码块
+================
+Code
+----------------
+/*
+ * Flame
+ * 火焰传感器检测到火焰后，控制蜂鸣器报警
+ */
+
+int beep = 8;//定义蜂鸣器接口为数字8 接口
+int flameVal = 0; //存储火焰传感器数据
+
+void setup() {
+  pinMode(beep, OUTPUT); //定义beep 为输出接口
+}
+
+void loop() {
+  flameVal = analogRead(A0); //读取火焰传感器的模拟值
+  if (flameVal >= 1) //当模拟值大于1时蜂鸣器鸣响，阈值根据实际测试进行修改
+  { 
+    digitalWrite(beep, HIGH);//
+  }
+  else
+  { 
+    digitalWrite(beep, LOW);
+  }
+}
+================
+Header
+----------------
+六、实验结果
+================
+Text
+----------------
+Arduino——火焰报警器
+================
+Title
+----------------
+Android 模拟器启动异常
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a542551042/article/details/56284106
+================
+Stars
+----------------
+0
+================
+Header
+----------------
+Cannot launch both VirtualBox virtual machine and HAXM at the same time
+================
+Text
+----------------
+启动Android 模拟器的时候提示HAXM 错误的时候
+首先去确定是否安装了 HAXM ,如果没有安装首先打开Android SDK 安装 HAXM
+当SDK 的工具安装完之后，还需要安装 Intel HAXM 驱动程序  访问 Inter HAXM 驱动  选择自己系统对应的版本下载安装后，即可启动了
+如果 安装完成后仍然无法启动，需要确认
+确保没有其他的虚拟话程序处于运行状态
+之后再启动Android 模拟器即可
+可以参考：  https://www.virtualbox.org/ticket/14294
+================
+Title
+----------------
+html 5 中的 6位 十六进制颜色码 代表的意思
+================
+License
+----------------
+None
+================
+Stars
+----------------
+4
+================
+Text
+----------------
+人的眼睛看到的颜色有两种： ⒈ 一种是发光体发出的颜色，比如计算机显示器屏幕显示的颜色； ⒉ 另一种是物体本身不发光，而是反射的光产生的颜色，比如看报纸和杂志上的颜色。
+我们又知道任何颜色都是由三种最基本的颜色叠加形成的，这三种颜色称为“三原色”。
+⒈ 对于上面提到的第一种颜色，即发光体的颜色模式，又称为“加色模式”，三原色是“红”、“绿”、“蓝”三种颜色。加色模式又称为“RGB模式”； ⒉ 而对于印刷品这样的颜色模式，又称为“减色模式”，它的三原色是“青”、“洋红”、“黄”三种颜色。减色模式又称为“CMY”模式。 例如，在网页上要指定一种颜色，就要使用RGB模式来确定，方法是分别指定R/G/B，也就是红/绿/蓝三种原色的强度，通常规定，每一种颜色强度最低为 0，最高为255，并通常都以16进制数值表示，那么255对应于十六进制就是FF，并把三个数值依次并列起来 ，以#开头。 例如，颜色值“#FF0000”为红色，因为红色的值达到了最高值 FF（即十进制的255），其余两种颜色强度为0。在例如“#FFFF00”表示黄色，因为当红色和绿色都为最大值，且蓝色为0时，产生的就是黄色。 到这里，我们就清楚了常用的颜色的表达方法了。例如在HTML语言规范中定义，可以通过两种方式指定颜色。 ⒈ 一种方式是以定义好的颜色名称表示，具体的颜色名称针对不同的浏览器也有所不同。 ⒉ 另一种方式通过一个以“#”开头的6位十六进制数值表示一种颜色。6位数字分为3组，每组两位，依次表示红、绿、蓝三种颜色的强度。  在RGB 颜色模式，颜色由表明红色，绿色，和蓝色各成分强度的三个数值表示。从极小值0到最大值255，当所有颜色,都在最低值被显示的颜色将是黑色，当所有颜色都在他们的最大值被显示的颜色将是白色。但是，一个缠扰不清的方面在RGB 颜色模式是，所有这些颜色可能代表以各种各样的方法。 颜色科学描述颜色在范围0.0 到1.0 （极小值对最大值）。颜色惯例的多数采取这些价值代表颜色变异。例如，1.0,0.0,0.0 代表最大强度的红色。 代表颜色价值其它方法是由使用百分比从0% 到100% （极小值对最大值）。这同一样以上说的方法，改变从范围0.0 到1.0，简单地倍增数字与100。 颜色价值可能并且代表作为数字范围从0 到255。这类型数字代表由计算机程序设计者广泛实施存放各颜色价值在一个8位字节。充分的强度红色代表作为255,0,0。
+同样范围，0 到255 和，十六进制数在这个范围通常被写以一个固定的两位数格式，代表它并且代表在十六进制，在某些情况下前缀（象#）。被写和# ff 的充分的强度红色，# 00,# 00。这可能被收缩象# ff0000。 16 位方式。
+================
+Title
+----------------
+slf4j+log4j配置java日志系统
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/abcnull/article/details/103606919
+================
+Stars
+----------------
+2
+================
+Header
+----------------
+文章目录
+================
+Code
+----------------
+<!-- lombok 依赖包 -->
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <version>${lombok-version}</version>
+	<scope>provided</scope>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-core</artifactId>
+    <version>2.11.1</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-api</artifactId>
+    <version>2.11.1</version>
+</dependency>
+<!--slf4j与log4j2的桥接包log4j-slf4j-impl,作用是使用slf4j的api，但是底层实现是基于log4j2-->
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-slf4j-impl</artifactId>
+    <version>2.11.1</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-api</artifactId>
+    <version>1.7.25</version>
+</dependency>
+src/main/resources
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Properties>
+        <!-- 配置参数日志目录前缀 -->
+        <Property name="LOG_HOME">logs</Property>
+        <!--配置日志输出格式 %t:线程名;%C:类名;%M:方法名;%m:错误信息;%n:换行 -->
+        <property name="PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t-%L] %-5level %C.%M - %m%n</property>
+    </Properties>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <!-- 控制台只输出level及以上级别的信息(onMatch),其他的直接拒绝(onMismatch) -->
+            <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${PATTERN}"/>
+        </Console>
+        <!-- 这个会打印出所有的info及以下级别的信息，每次大小超过size，
+        则这size大小的日志会自动存入按年份-月份建立的文件夹下面，作为存档。清空demo.log,将最新的log输出到demo.log中，以此循环。 -->
+        <RollingFile name="RollingFile" fileName="${LOG_HOME}/demo.log"
+                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/%d{yyyy-MM-dd}-demo-%i.log">
+            <ThresholdFilter level="debug" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${PATTERN}" charset="UTF-8"/>
+            <Policies>
+                <!-- 基于时间的滚动策略，interval属性用来指定多久滚动一次，默认是1 hour。 modulate=true用来调整时间：比如现在是早上3am，interval是4，那么第一次滚动是在4am，接着是8am，12am...而不是7am. -->
+                <!-- 关键点在于 filePattern后的日期格式，以及TimeBasedTriggeringPolicy的interval，
+                日期格式精确到哪一位，interval也精确到哪一个单位 -->
+                <!-- log4j2的按天分日志文件 : %d{yyyy-MM-dd}-%i.log-->
+                <!-- log4j2的按小时分日志文件 : %d{yyyy-MM-dd HH}-%i.log-->
+                <!-- log4j2的按分钟分日志文件 : %d{yyyy-MM-dd HH:mm}-%i.log-->
+                <!-- log4j2的按秒分日志文件 : %d{yyyy-MM-dd HH:mm:ss}-%i.log-->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <!-- SizeBasedTriggeringPolicy:Policies子节点， 基于指定文件大小的滚动策略，size属性用来定义每个日志文件的大小. -->
+                <SizeBasedTriggeringPolicy size="5 MB" />
+            </Policies>
+            <!--设置生成的最多文件数-->
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <!--指定日志输出的最低级别以及输出到哪些Appender-->
+        <root level="debug">
+            <appender-ref ref="Console"/>
+            <appender-ref ref="RollingFile"/>
+        </root>
+    </Loggers>
+</Configuration>
+================
+Title
+----------------
+spring-boot 集成 keycloak 遇到的问题
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/128526784
+================
+Stars
+----------------
+0
+================
+Text
+----------------
+1、版本差异问题
+认证地址：
+17版本之前是 http://localhost:8080/auth，之后 http://localhost:8080 没有/auth
+网上很多文章都是低版本的，现在下载的 keycloak都是高版本，并且历史的低版本不支持下载，
+直接影响到：http://localhost:8080/auth/realms/my-realm001/.well-known/openid-configuration 这个配置无法获取，巨坑。
+2、无法加载重定向url
+KeyCloak登录页面显示"无效参数:redirect_uri"
+这个是引起的方面有很多，具体参考 stackoverflow ：
+Keycloak: Failed to load URLs in Spring Boot Application - Stack Overflow
+还有一个问题点是 client配置的问题。
+注意这2个配置。修改如图就行。
+文章非原创
+================
+Title
+----------------
+arduino：废旧光驱DIY激光雕刻机（完善中……）
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/acktomas/article/details/103628157
+================
+Stars
+----------------
+143
+================
+Header
+----------------
+光驱diy画图仪
+================
+Header
+----------------
+0. 硬件清单
+================
+Text
+----------------
+Arduino UNO R3、CNC shield V3、A4988（2个）、Micro Servo 9g、光驱（2个）、12V1A电源适配器、结构件材料（自制）、线材、热熔胶等。
+CNC shield V3 直接买这个扩展板对没基础的maker来说，接线会方便很多，不需要用面包板或洞洞板焊接线。购买时要注意买“跳帽”，这个也不能忘记。   Arduino CNC shield原理图：  A4988 购买时，一般都会配有散热片，给A4988上的芯片散热。
+Micro Servo 9g 这个要注意，常见的有180度和360度两种旋转的舵机，我们要买180度的舵机。  光驱 因为光驱上有安装好的微型步进电机、光杆和滑台，我们可以直接用它作为一个方向的运动平台。
+================
+Header
+----------------
+1. 硬件
+================
+Text
+----------------
+Arduino Uno + CNC Shield V3 + GRBL v1.1固件.
+CNC shield直接扣到Arduino UNO板上。
+将2个A4988扣到X、Y插座上，注意看图中它们的方向。散热片直接贴再芯片上。将步进电机引出的四根线连接到A4988旁的引针上。步进电机四个引脚分别是两个绕组的两端，两两相连。我们使用万用表的蜂鸣器测出互相连接的两个引脚。相连的两个引脚接到控制板上相邻的两个针脚上就行。
+CD/DVD 机械部件：通常光驱的电机是18度（每圈20步），行程是3毫米。所以当驱动设置在1/32细分时，GRBL的$100参数是（20 * 32） / 3 = 213.33 （步/毫米). 搜索关键词：“DIY光驱丝杆滑台”
+================
+Header
+----------------
+2. 软件
+================
+Header
+----------------
+2.1. java runtime
+================
+Text
+----------------
+下载地址：https://www.java.com/inc/BrowserRedirect1.jsp?locale=zh_CN
+================
+Header
+----------------
+2.2. Inkscape
+================
+Text
+----------------
+InkScape 下载网址： https://inkscape.org 首先正常安装好软件后，我们还要给它装一个插件，解压MI Inkscape Extension.zip(文尾处直接下载）到inkscape的安装文件夹C:\Program Files (x86)\Inkscape\share\extensions文件夹内
+2.2.1 G代码简介以及如何使用Inkscape生成G代码
+https://www.norwegiancreations.com/2015/08/an-intro-to-g-code-and-how-to-generate-it-using-inkscape/
+================
+Header
+----------------
+2.3 Universal-G-Code-Sender
+================
+Text
+----------------
+下载地址：https://github.com/winder/builds/tree/master/UniversalGCodeSender UGS 下载网址： https://winder.github.io/ugs_website/download/
+================
+Header
+----------------
+2.4 SourceRabbit GCode Sender
+================
+Text
+----------------
+SourceRabbit GCode Sender is a GRBL compatible, cross platform CNC control software. It features a highly optimized and asynchronous (event-driven) UI and USB-to-Serial communication and can be also used on computers with small amount of RAM and CPU. https://github.com/nsiatras/sourcerabbit-gcode-sender
+================
+Header
+----------------
+2.5 LaserGRBL
+================
+Text
+----------------
+下载地址：https://github.com/arkypita/LaserGRBL Official website http://lasergrbl.com
+LaserGRBL is a Windows GUI for GRBL. Unlike other GUI LaserGRBL it is specifically developed for use with laser cutter and engraver. In order to use all of LaserGRBL feature, your engraver must supports laser power modulation through gcode “S” command. LaserGRBL is compatible with Grbl v0.9 and Grbl v1.1
+All downloads available at https://github.com/arkypita/LaserGRBL/releases
+================
+Header
+----------------
+2.6 CuraEngine
+================
+Text
+----------------
+下载地址：https://github.com/Ultimaker/CuraEngine CuraEngine是一个强大，快速且强大的引擎，用于将3D模型处理为Ultimaker和其他基于GCode的3D打印机的3D打印指令。它是大型开源项目“ Cura”的一部分。https://ultimaker.com/en/products/cura-software CuraEngine The CuraEngine is a C++ console application for 3D printing GCode generation. It has been made as a better and faster alternative to the old Skeinforge engine.
+The CuraEngine is pure C++ and uses Clipper from http://www.angusj.com/delphi/clipper.php Furthermore it depends on libArcus by Ultimaker, which can be found at http://github.com/Ultimaker/libArcus
+This is just a console application for GCode generation. For a full graphical application look at https://github.com/Ultimaker/Cura which is the graphical frontend for CuraEngine.
+The CuraEngine can be used seperately or in other applications. Feel free to add it to your application. But please take note of the License.
+================
+Header
+----------------
+2.7 grbl
+================
+Text
+----------------
+下载地址：https://github.com/gnea/grbl/releases
+================
+Header
+----------------
+2.4 可视化G代码
+================
+Text
+----------------
+下载：https://camotics.org/download.html
+================
+Header
+----------------
+注意问题：
+================
+Header
+----------------
+脉冲计算
+================
+Text
+----------------
+计算每毫米的脉冲数 光驱特点：每步18度（一圈20步），丝杆直径一般为3mm，丝杆螺距为3mm，也就是步进电机每转一圈，移动距离为3毫米， 咱主要修改“脉冲数”脉冲/mm这个参数 首先你必须知道你买的滑台的以下参数
+================
+Header
+----------------
+参考网址
+================
+Link
+----------------
+http://mc.dfrobot.com.cn/thread-37159-1-1.html
+================
+Link
+----------------
+https://linux.cn/article-9714-1.html
+================
+Link
+----------------
+https://www.jianshu.com/p/6afda0c18b96
+================
+Link
+----------------
+https://www.instructables.com/id/How-to-Control-a-Servo-Using-GRBL/
+================
+Title
+----------------
+Activiti集成Activiti Modeler
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/109514522
+================
+Stars
+----------------
+2
+================
+Text
+----------------
+Activiti6.0.0及以上版本与activiti-modeler的maven引用有冲突，解决方法参考Activiti6.0.0及以上版本集成Activiti Modeler
+1.下载源文件
+activiti-5.22.0官方Demo
+activiti5.22.0源码
+2.copy源文件
+解压activiti-5.22.0官方Demo
+解压activiti-explorer.war
+复制editor-app,diagram-viewer文件夹，以及modele.html到本地项目
+解压activiti5.22.0源码
+复制ModelEditorJsonRestResource.java,ModelSaveRestResource.java,StencilsetRestResource.java到控制层文件夹下
+3.添加maven引用
+================
+Code
+----------------
+<dependency>
+	<groupId>org.activiti</groupId>
+	<artifactId>activiti-modeler</artifactId>
+	<version>5.22.0</version>
+</dependency>
+================
+Text
+----------------
+4.启动项目,访问modeler页面
+http://localhost:8080/modeler.html
+修改启动类，屏蔽登录功能
+================
+Code
+----------------
+@SpringBootApplication
+@EnableAutoConfiguration(exclude = {
+		org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration.class,
+		org.activiti.spring.boot.SecurityAutoConfiguration.class,
+})
+public class DemoApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(DemoApplication.class, args);
+	}
+}
+================
+Text
+----------------
+再次访问modeler页面
+处理 /activiti-explorer/service/model//json 请求的报错
+该请求的控制类为ModelEditorJsonRestResource.java
+================
+Code
+----------------
+@RequestMapping(value="/model/{modelId}/json", method = RequestMethod.GET, produces = "application/json")
+================
+Text
+----------------
+在/public/editor-app/app-cfg.js文件中修改请求的地址
+================
+Code
+----------------
+ACTIVITI.CONFIG = {
+	//'contextRoot' : '/activiti-explorer/service',
+	'contextRoot' : '',
+};
+================
+Text
+----------------
+再次访问modeler页面
+报错GET http://localhost:8080/model//json 404 () 这是因为我们没有已经建好的model模型，无法查看
+5.新建model
+测试类
+================
+Code
+----------------
+@Controller
+@RequestMapping("model")
+public class ModelTest {
+
+    @RequestMapping("create")
+    public void createModel(HttpServletRequest request, HttpServletResponse response){
+        try{
+            String modelName = "modelName";
+            String modelKey = "modelKey";
+            String description = "description";
+
+            ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+
+            RepositoryService repositoryService = processEngine.getRepositoryService();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectNode editorNode = objectMapper.createObjectNode();
+            editorNode.put("id", "canvas");
+            editorNode.put("resourceId", "canvas");
+            ObjectNode stencilSetNode = objectMapper.createObjectNode();
+            stencilSetNode.put("namespace", "http://b3mn.org/stencilset/bpmn2.0#");
+            editorNode.put("stencilset", stencilSetNode);
+            Model modelData = repositoryService.newModel();
+
+            ObjectNode modelObjectNode = objectMapper.createObjectNode();
+            modelObjectNode.put(ModelDataJsonConstants.MODEL_NAME, modelName);
+            modelObjectNode.put(ModelDataJsonConstants.MODEL_REVISION, 1);
+            modelObjectNode.put(ModelDataJsonConstants.MODEL_DESCRIPTION, description);
+            modelData.setMetaInfo(modelObjectNode.toString());
+            modelData.setName(modelName);
+            modelData.setKey(modelKey);
+
+            //保存模型
+            repositoryService.saveModel(modelData);
+            repositoryService.addModelEditorSource(modelData.getId(), editorNode.toString().getBytes("utf-8"));
+            response.sendRedirect(request.getContextPath() + "/modeler.html?modelId=" + modelData.getId());
+        }catch (Exception e){
+        }
+    }
+
+}
+================
+Text
+----------------
+访问localhost:8080/model/create
+处理http://localhost:8080/editor/stencilset?version=1523329753442请求的报错
+在StencilsetRestResource.java中，我们项目中少了stencilset.json
+================
+Code
+----------------
+@RestController
+public class StencilsetRestResource {
+  
+  @RequestMapping(value="/editor/stencilset", method = RequestMethod.GET, produces = "application/json;charset=utf-8")
+  public @ResponseBody String getStencilset() {
+  //stencilset.json为Model中的工具栏的名称字符，这里在resources下面查找
+    InputStream stencilsetStream = this.getClass().getClassLoader().getResourceAsStream("stencilset.json");
+    try {
+      return IOUtils.toString(stencilsetStream, "utf-8");
+    } catch (Exception e) {
+      throw new ActivitiException("Error while loading stencil set", e);
+    }
+  }
+}
+================
+Text
+----------------
+下载stencilset.json，并放置在resources目录下 再次访问localhost:8080/model/create
+6.保存Model
+处理http://localhost:8080/model/102503/save的报错
+修改ModelSaveRestResource.java为
+================
+Code
+----------------
+@RestController
+public class ModelSaveRestResource implements ModelDataJsonConstants {
+  
+  protected static final Logger LOGGER = LoggerFactory.getLogger(ModelSaveRestResource.class);
+
+  @Autowired
+  private RepositoryService repositoryService;
+  
+  @Autowired
+  private ObjectMapper objectMapper;
+  
+  @RequestMapping(value="/model/{modelId}/save", method = RequestMethod.PUT)
+  @ResponseStatus(value = HttpStatus.OK)
+  public void saveModel(@PathVariable String modelId, String name, String description, String json_xml, String svg_xml) {
+    try {
+
+      Model model = repositoryService.getModel(modelId);
+
+      ObjectNode modelJson = (ObjectNode) objectMapper.readTree(model.getMetaInfo());
+
+      modelJson.put(MODEL_NAME, name);
+      modelJson.put(MODEL_DESCRIPTION, description);
+      model.setMetaInfo(modelJson.toString());
+      model.setName(name);
+
+      repositoryService.saveModel(model);
+
+      repositoryService.addModelEditorSource(model.getId(), json_xml.getBytes("utf-8"));
+
+      InputStream svgStream = new ByteArrayInputStream(svg_xml.getBytes("utf-8"));
+      TranscoderInput input = new TranscoderInput(svgStream);
+
+      PNGTranscoder transcoder = new PNGTranscoder();
+      // Setup output
+      ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+      TranscoderOutput output = new TranscoderOutput(outStream);
+
+      // Do the transformation
+      transcoder.transcode(input, output);
+      final byte[] result = outStream.toByteArray();
+      repositoryService.addModelEditorSourceExtra(model.getId(), result);
+      outStream.close();
+
+    } catch (Exception e) {
+      LOGGER.error("Error saving model", e);
+      throw new ActivitiException("Error saving model", e);
+    }
+  }
+}
+================
+Text
+----------------
+再次保存，保存成功。Activiti Modeler集成成功
+================
+Link
+----------------
+源码下载
+================
+Text
+----------------
+转载自https://blog.csdn.net/h1059141989/article/details/79870043
+================
+Title
+----------------
+C语言实现Vigenere(维吉利亚)加密
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/79331977
+================
+Stars
+----------------
+6
+================
+Header
+----------------
+维吉尼亚密码
+================
+Link
+----------------
+恺撒密码
+================
+Link
+----------------
+吉奥万·巴蒂斯塔·贝拉索
+================
+Link
+----------------
+密钥
+================
+Text
+----------------
+实现图片：
+实现代码：
+================
+Title
+----------------
+SpringBoot2.7.4集成Flowable6.7.2
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/128526626
+================
+Stars
+----------------
+0
+================
+Code
+----------------
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.4</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.bool</groupId>
+    <artifactId>workflow</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>workflow</name>
+    <description>Demo project for Spring Boot</description>
+    <properties>
+        <java.version>1.8</java.version>
+        <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
+        <flowable.version>6.7.2</flowable.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+        <!-- 添加flowable-ui-modeler核心依赖项-->
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-ui-modeler-rest</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+        <!--添加flowable-ui-modeler配置依赖项-->
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-ui-modeler-conf</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+
+        <!-- 添加flowable-ui依赖 -->
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter-ui-modeler</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter-ui-admin</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter-ui-idm</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter-ui-task</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 数据库驱动 -->
+        <!--mysql-->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql-connector-java.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- 使用 aliyun 的 Maven 源，提升下载速度 -->
+    <repositories>
+        <repository>
+            <id>aliyunmaven</id>
+            <name>aliyun</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </repository>
+    </repositories>
+
+</project>
+================
+Text
+----------------
+配置文件：
+application.properties
+================
+Code
+----------------
+server.port=8082
+spring.datasource.url=jdbc:mysql://192.168.0.101:3306/workflow?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF8
+spring.datasource.username=root
+spring.datasource.password=123456
+spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+================
+Text
+----------------
+application.yml:
+================
+Code
+----------------
+# 工作流 Flowable 配置
+flowable:
+  # 1. false: 默认值，Flowable 启动时，对比数据库表中保存的版本，如果不匹配。将抛出异常
+  # 2. true: 启动时会对数据库中所有表进行更新操作，如果表存在，不做处理，反之，自动创建表
+  # 3. create-drop: 启动时自动创建表，关闭时自动删除表
+  # 4. drop-create: 启动时，删除旧表，再创建新表
+  database-schema-update: true # 设置为 false，可通过 https://github.com/flowable/flowable-sql 初始化
+  db-history-used: true # flowable6 默认 true 生成信息表，无需手动设置
+  check-process-definitions: false # 设置为 false，禁用 /resources/processes 自动部署 BPMN XML 流程
+  history-level: full # full：保存历史数据的最高级别，可保存全部流程相关细节，包括流程流转各节点参数
+================
+Text
+----------------
+启动项目，访问地址
+http://localhost:8082/idm/#/user-mgmt
+默认账户名和密码：admin test
+新版的Flowable集成UI非常简单只需引入flowable-ui依赖即可。
+以下几点需要注意：
+1.但是要注意SpringBoot版本和Flowable版本关系
+2.Mysql要开启大小写不敏感
+================
+Title
+----------------
+kali 国内镜像源，以及PD_tools,Vm_tools的安装
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a542551042/article/details/49821089
+================
+Stars
+----------------
+5
+================
+Text
+----------------
+kali 系统apt-get 更新镜像源，往上分享的有，这里整理下    中科大kali源  deb http://mirrors.ustc.edu.cn/kali sana main non-free contrib  deb http://mirrors.ustc.edu.cn/kali-security/ sana/updates main contrib non-free  deb-src http://mirrors.ustc.edu.cn/kali-security/ sana/updates main contrib non-free
+阿里云kali源  deb http://mirrors.aliyun.com/kali sana main non-free contrib  deb http://mirrors.aliyun.com/kali-security/ sana/updates main contrib non-free  deb-src http://mirrors.aliyun.com/kali-security/ sana/updates main contrib non-free
+更新镜像源方法：  1. 编辑 vi /etc/apt/sources.list  2. 添加镜像源到文件中，保存退出  3. 执行apt-get update 更新包  4. 执行apt-get upgrade 更新依赖关系包  5. 执行apt-get dist-upgrade 分析依赖关系包进行升级  6. 执行apt-get clean 清理多余的安装包
+更新完成了
+1 .PD(Parallers Desktop) Tools 安装
+挂载pd_tools上之后进入 media/cdrom0  复制cdrom0 到任意的位置，例如cp -R cdrom0 /home/  进入/home/  修改cdrom0的权限 ，例如 chmod 777 cdrom0  进入cdrom0执行install-gui，例如 ./install-gui
+之后会弹出PD_Tools 的安装进度，等待安装即可（./install 也是可以的，只是还需要点击几下确认）
+2 .Vmware Tools 安装
+挂载vmware_tools上之后进入 media/cdrom0  复制cdrom0 目录下的tar.gz文件到任意文件夹，  例如cp cdrom0/VMwareTools-10.0.0-2977863.tar.gz /home/  进入/home/,解压tar,解压之后生成vmware-tools-distrib  进入解压目录执行 vmware-install.pl  之后根据提示一路回车，直到安装成功，提示安装成功后，重启vm即可
+================
+Title
+----------------
+openlayers 给Feature提供修改撤销功能
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/106009601
+================
+Stars
+----------------
+6
+================
+Text
+----------------
+最近在开发燃气管道布线gis系统，需要用到openlayers，功能需要自己做一个撤销的功能，openlayers API找了一圈没有发现有提供相应的api，于是自己利用栈的天然先进后出机制实现了一个。
+撤销功能主要通过一个栈来实现的：
+================
+Code
+----------------
+undoStack: [] // 撤回栈
+================
+Text
+----------------
+当修改事件发生时，保存原来的Feature到栈中
+================
+Code
+----------------
+modify.on('modifystart', (evt) => {
+      var item = evt.features.item(0)
+      var feature = new Feature()
+      feature.setGeometry(item.getGeometry().clone())
+      feature.setGeometryName(item.getGeometryName())
+      feature.setStyle(item.getStyle())
+      feature.ol_uid = item.ol_uid
+      this.undoStack.push(feature)
+    })
+================
+Text
+----------------
+当点击了Undo按钮后，pop弹出栈顶的Feature，通过ol_uid把图层的修改后的feature给删除，然后把弹出的栈顶的feature添加进图层即可实现undo
+================
+Code
+----------------
+undoClick () { // 撤回上一步修改操作
+      let feature = this.undoStack.pop()
+      console.log(feature.ol_uid)
+      let findFeatureByUid1 = this.findFeatureByUid(feature.ol_uid)
+      let source = this.map.getLayers().getArray()[0].getSource()
+      source.removeFeature(findFeatureByUid1)
+      console.log(feature)
+      source.addFeature(feature)
+    },
+    findFeatureByUid (uid) {
+      let source = this.map.getLayers().getArray()[0].getSource()
+      let featureByUid = source.getFeatureByUid(uid)
+      return featureByUid
+    }
+================
+Title
+----------------
+spring项目在非Spring管理的类中注入Bean的方法
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/128526598
+================
+Stars
+----------------
+0
+================
+Text
+----------------
+原理就是通过实现Spring的ApplicationContextAware，来获取ApplicationContext容器的引用，并在静态方法中封装。
+================
+Code
+----------------
+@Component
+public class ApplicationContextGetBeanHelper implements ApplicationContextAware {
+   private static ApplicationContext applicationContext;
+ 
+   @Override
+   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+       this.applicationContext = applicationContext;
+   }
+ 
+   public static Object getBean(String className) throws BeansException,IllegalArgumentException {
+       if(className==null || className.length()<=0) {
+           throw new IllegalArgumentException("className为空");
+       }
+ 
+       String beanName;
+       if(className.length() > 1) {
+           beanName = className.substring(0, 1).toLowerCase() + className.substring(1);
+       } else {
+           beanName = className.toLowerCase();
+       }
+       return applicationContext != null ? applicationContext.getBean(beanName) : null;
+   }
+ 
+   public static  <T> T getBean(Class<T> beanClass) throws BeansException,IllegalArgumentException {
+       if(beanClass==null) {
+           throw new IllegalArgumentException("beanClass为空");
+       }
+       return applicationContext != null ? applicationContext.getBean(beanClass) : null;
+   }
+ 
+}
+================
+Text
+----------------
+2、在需要注入Bean的地方使用ApplicationContextGetBeanHelper去getBean即可
+================
+Code
+----------------
+// 方式一：根据要注入的Bean的Class去获取Bean
+TableMetaService tableMetaService1 = ApplicationContextGetBeanHelper.getBean(TableMetaService.class);
+
+// 方式二：根据要注入的Bean的name去获取Bean
+TableMetaService tableMetaService2 = (TableMetaService)ApplicationContextGetBeanHelper.getBean("tableMetaService");
+================
+Title
+----------------
+一加8 pro 刷入 kali Hunter
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a648642694/article/details/127450785
+================
+Stars
+----------------
+12
+================
+Header
+----------------
+一加8pro 刷入 Kali NetHunter
+================
+Header
+----------------
+前言
+================
+Text
+----------------
+小伙伴在一加8pro刷 kali NetHunter 过程中踩了不少坑，在这里我总结一下刷成功的经验。
+主要是参照XDA论坛提供的 教程、脚本，和内核： https://forum.xda-developers.com/t/rom-unofficial-nethunter-oneplus-8t-android-11-12-26-08-21.4324555/
+在安装过程中呢，刷了几次机，由于手机最开始 是 ColorOS 12，Android12，所以要换成Android11 氢OS，咨询过大侠阿木，国内氢os 和国外氧os并无本质差别，所以刷氢os和氧os都可以。 XDA论坛上的介绍说Android 12 应该也是可以的，应该需要自定义的ROM，我并没有研究，而是使用Android 11 氢OS 成功安装的。
+过程中呢先刷入完整纯净的氢系统： 通过MsmDownloadTool 线刷 【instantnoodlep_15_H.44_211208.ops】 包 然后再进入系统后将完整包复制到sdcard目录下，使用更新系统功能进行覆盖安装 【OnePlus8ProHydrogen_15.H.45_OTA_0450_all_2202142225_140494bd81f848bc.zip】（这个版本应该是停更前最后一个版本的氢系统） 系统准备完毕后就可以正式刷解bl锁、刷第三方rec、和kali NetHunter了。
+================
+Header
+----------------
+踩坑
+================
+Text
+----------------
+主要导致失败的地方出现过地方有两个
+坑1：
+XDA作者提供的内核我再做的时候更新时间是2022-03-27 这表示再最后一个氢系统之后理论上是应该能支持的。但是实际上刷完最新内核之后无法开机，开机直接进入fastboot模式。  后来在论坛苦苦的寻找答案，功夫不负有心人最后评论区找到了与我问题相似的网友 解决办法是 刷入一个旧版本NetHunter 内核！ 旧版本内核下载链接 在#192楼
+坑2：
+再XDA论坛提供的Mount System read write R/W 脚本可能跟面具版本有一定关系？安装最新版Magisk（v25.0）再刷 system RW脚本时候出现报错，脚本跑到修复 super 分区时候无法继续执行，后来更换面具Magisk（v23.0）后脚本可以正常跑通，但是具体原因不得而知。
+两个坑都跳过了我也就刷成功了~
+================
+Header
+----------------
+开始
+================
+Header
+----------------
+1.解锁bootloader
+================
+Text
+----------------
+​ 开发者选项->开启adb调试模式
+​ 开发者选项->ome 解锁 启用
+​ 进入fastboot模式
+adb reboot bootloader
+​ fastboot模式下直接输入解锁指令
+​ fastboot oem unlock
+​ 手机使用音量键选择下面的确认解锁并按电源键确认
+​ 手机会自动重启并且格式化data分区，进入系统就OK了
+================
+Header
+----------------
+2.第三方recovery 刷入TWRP
+================
+Text
+----------------
+​ 开发者选项->开启adb调试模式
+​ 进入fastboot模式
+​ adb reboot bootloader
+​ fastboot模式下刷入TWRP镜像文件
+​ fastboot flash recovery twrp-3.7.0_11-0-instantnoodle.img
+​ 刷入完成，重启至 recovery 模式，在手机用音量键选择电源键确认
+​ 进入重启至system，进入系统就OK了
+================
+Header
+----------------
+3.刷入Magisk
+================
+Text
+----------------
+​ 在手机上安装 Magisk-v23.0.apk （之前安装v25.0没成功，执行下面脚本时候报错 super.img时候 报错误码 76）
+​ 手机重启至 recovery模式
+​ adb reboot recovery
+​ 在将Magisk-v23.0.apk 改个名 后面加入Magisk-v23.0.apk.zip传入手机
+​ adb push Magisk-v23.0.apk.zip /sdcard
+​ 通过TWRP刷入 Magisk-v23.0.apk.zip
+================
+Header
+----------------
+4.运行systemrw脚本
+================
+Text
+----------------
+​ 解压缩 systemrw_1.32_flashable.zip 得到文件夹“systemrw_1.32”
+​ 将已解压缩的systemrw_1.32文件夹 传入 /data/local/tmp 目录下
+​ adb push C:\Users\Administrator\Desktop\adb\kali\systemrw_1.32 /data/local/tmp
+​ 然后赋予权限并执行此脚本
+​ adb shell
+​ cd /data/local/tmp/systemrw_1.32
+​ chmod +x systemrw.sh
+​ ./systemrw.sh size=100
+​ 等待脚本执行完毕
+​ 看到如下字样 重启进入系统
+================
+Code
+----------------
+systemrw: Congratulations! Your image(s) should now have R/W capability
+ systemrw: Deleting /data/local/tmp/systemrw_1.32/img/super_fixed.bin to free up some space
+ systemrw: Please reboot to system...
+================
+Text
+----------------
+​ reboot
+================
+Header
+----------------
+5.检查system读写权限
+================
+Text
+----------------
+​ 开机后安装mt管理器或其他超级管理器
+​ 检测 /system 能否有权限成功创建目录，随便创建"123"（不能创建目录从新执行第4步骤）
+================
+Header
+----------------
+6.使用Magisk刷入NetHunter
+================
+Text
+----------------
+​ 将 nethunter-oneplus8-all-eleven-kalifs-full.zip 包传入手机
+​ adb push nethunter-oneplus8-all-eleven-kalifs-full.zip /sdcard
+​ 使用使用Magisk 刷入 nethunter-oneplus8-all-eleven-kalifs-full.zip
+================
+Header
+----------------
+7.刷入NetHunter内核
+================
+Text
+----------------
+​ 进入 recovery TWRP模式刷入内核
+​ 注意刷入内核前做备份否则极易无法开机
+​ adb push NetHunter_Kernel_for_OnePlus8_A11_old.zip /sdcard
+​ TWRP刷入NetHunter_Kernel_for_OnePlus8_A11_old.zip
+================
+Header
+----------------
+8.重启进入系统更新应用
+================
+Text
+----------------
+​ 开机后打开 F-Droid商店
+​ 更新NetHunter 并安装
+================
+Header
+----------------
+9.NetHunter启动 chroot
+================
+Text
+----------------
+​ 打开 NetHunter启动 chroot查看是否成功启动
+================
+Header
+----------------
+10.成功-完成
+================
+Text
+----------------
+经过测试功能一切正常，除了官方已经说明了 内置wlan0网卡 切换monter模式 需要等待15秒暂时还没发现其他问题。
+================
+Title
+----------------
+Mac    Python路径总结
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a542551042/article/details/47149959
+================
+Stars
+----------------
+8
+================
+Text
+----------------
+Mac 下Python 可以多版本的并存，并且Python的目录也有好几个，不过总体来说，Mac 自带的有python 还是比较方便的
+Mac 系统自带的又Python ,可能Python版本需要更新，所以目录结构要了解下
+系统自带的Python的路径
+在mac 系统自带的程序都会在library下查看  前往文件夹 /Lib (资源库)  系统自带的Python 路径为：  /Library/Frameworks/Python.framework/Versions/2.7
+当前的版本是2.7.6目录结构和Windows相似这里说下bin,lib    bin目录，就相当于主程序的目录
+lib目录，就是python程序模块的目录
+系统自带python的安装模块包路径
+在lib目录下python2.7，有个 site-packages 这个包里面的模块都是通过    python setup.py install    这个python 命令安装的模块
+在这个 site-packages 这个包里面的模块都是通过    pip install xxxxxx    这个pip 命令安装的模块
+使用brew 安装的python  Mac 有个强大的brew 工具，类似apt-get，使用它可以安装一些系统的模块，同样可以更新安装python  参考：  https://github.com/Homebrew/homebrew/tree/master/share/doc/homebrew#readme
+使用brew 安装的都会存在路径：/usr/local
+同样使用brew 安装的python路径如下:  /usr/local/Frameworks/Python.framework/Versions/
+ps:  /usr/local/ 这个文件夹 相当于本地用户的系统文件夹
+================
+Title
+----------------
+GRBL v1.1版本的介绍
+================
+License
+----------------
+None
+================
+Stars
+----------------
+31
+================
+Text
+----------------
+source websit：https://github.com/gnea/grbl-Mega/
+================
+Title
+----------------
+Mac AppStore  登陆提示 未知错误
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a542551042/article/details/47102473
+================
+Stars
+----------------
+0
+================
+Text
+----------------
+Mac Book 登陆的时候提示未知错误，刚开始以为是需要内建网卡后来才得知：
+如果是黑苹果，或者是网卡没有对应上的，需要内建网卡  mac 系统默认的是无线网卡en0  其他都网卡 以此类推
+如果是mac机本身，出现的问题，那么就是用户登陆的问题，mac登陆过的用户，如果不注销掉的话，都是会冲突的，从而导致未知错误
+解决办法：  1.检查icloud,iTunes,App Store ，以前登陆过的账户是否注销掉了，没有注销的话都注销掉，之后重新登陆新的Apple id 即可成功  2.检查iTunes 的统一条款，是否同意就行了
+================
+Title
+----------------
+C语言数据结构之利用栈进行括号匹配的检验
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a1135004584/article/details/79426713
+================
+Stars
+----------------
+21
+================
+Text
+----------------
+括号匹配的检验:
+eg: [([][][)]]    不匹配
+[([][])] 匹配
+================
+Header
+----------------
+思路：
+================
+Text
+----------------
+0x0.首先建立两个栈，并对其初始化
+0x1.对表达式进行遍历，将相邻两个不能匹配的入栈到栈A，然后检测栈空间A是否为偶数，如果是表明有存在的可能，如果不是则提示不匹配。
+0x2.检测栈空间A是否为偶数，如果是表明有存在的可能，如果不是则提示不匹配，遍历栈A，将不匹配的入栈到栈B，如果匹配则判断是否是最后两个元素，如果是表明匹配
+0x3.判断出栈前的A和栈B长度是否相等，如果相等表明不匹配。
+0x4.栈A和栈B互换，重复步骤0x2,直到都为空.
+================
+Header
+----------------
+运行截图：
+================
+Header
+----------------
+代码：
+================
+Text
+----------------
+Stack.h
+Stack.c
+main5.c
+================
+Title
+----------------
+基于Arduino的消防机器人
+================
+License
+----------------
+None
+================
+Stars
+----------------
+34
+================
+Text
+----------------
+原文：https://circuitdigest.com/microcontroller-projects/arduino-fire-fighting-robot-code
+================
+Header
+----------------
+基于Arduino的消防机器人
+================
+Text
+----------------
+ARDUINO项目
+经过**阿斯温斯·拉吉（Aswinth Raj）** 2017年12月20日
+根据国家犯罪记录局（NCRB）的估计，从2010年至2014年，印度发生的火灾事故已造成超过120万死亡。即使为火灾事故采取了许多预防措施，但这些自然/人为灾难确实时有发生。发生火灾时，为了营救人员和灭火，我们被迫使用不安全的人力资源。随着技术的进步，尤其是机器人技术的发展，很有可能用机器人代替人来灭火。这将提高消防员的效率，也将防止他们冒着生命危险。今天，我们将使用Arduino构建消防机器人，该机器人将自动感应火势并启动水泵
+在这个项目中，我们将学习如何使用Arduino构建一个简单的机器人，该机器人可以朝着火势移动并在其周围抽水以扑灭大火。这是一个非常简单的机器人，可以教给我们有关机器人技术的基本概念。了解以下基本知识后，您就可以构建更复杂的机器人。因此，让我们开始吧…
+================
+Header
+----------------
+所需材料：
+================
+Text
+----------------
+购买上述所有所需的Arduino消防机器人组件。
+================
+Header
+----------------
+消防机器人的工作理念：
+================
+Text
+----------------
+该项目的主要大脑是Arduino，但是为了感知火情，我们使用了如下所示的火情传感器模块（火情传感器）。
+如您所见，这些传感器具有用于检测火情的红外接收器（光电二极管）。这怎么可能？当火燃烧时，它会发出少量的红外光，该光将被传感器模块上的IR接收器接收。然后，我们使用运算放大器检查IR接收器两端的电压变化，以便在检测到火灾时输出引脚（DO）的输出为0V（LOW），如果没有火灾，则输出引脚的输出为5V（高的）。
+因此，我们在机器人的三个方向上放置了三个这样的传感器，以感应火在哪个方向上燃烧。
+我们可以通过通过L293D模块驱动我们的电动机来检测起火的方向，从而可以使电动机在起火附近移动。当着火时，我们必须用水灭火。使用一个小容器我们可以运载水，一个5V的泵也被放置在容器中，整个容器被放置在伺服电机的顶部，这样我们就可以控制喷水的方向。现在让我们继续进行连接
+================
+Header
+----------------
+电路图：
+================
+Text
+----------------
+该消防机器人的完整电路图如下所示
+您可以连接所有显示的连接以上传程序以检查程序是否正常运行，也可以完全组装机器人，然后继续进行连接。两种方式的连接都非常简单，您应该能够正确进行连接。
+根据您使用的机械手机箱，您可能无法使用与我使用的相同类型的容器。在这种情况下，请使用您自己的创造力来设置泵系统。但是，代码将保持不变。我用一个小的铝罐（凉饮料罐）将泵放入其中，并向其中倒水。然后，我将整个罐子组装在伺服电机的顶部，以控制水的方向。组装后，我的机器人看起来像这样。
+如您所见，我已使用涂胶将伺服散热片固定在容器的底部，并使用螺母和螺栓将伺服电机与底盘固定在一起。我们可以简单地将容器放置在电动机的顶部，并触发其中的泵将水通过管子抽到外部。然后可以使用伺服器旋转整个容器，以控制水的方向。
+================
+Header
+----------------
+编程Arduino：
+================
+Text
+----------------
+准备好硬件后，您可以上传Arduino代码以执行某些操作。该完整的程序是在本页面末尾。但是，我在这里进一步解释了一些重要的细节。
+众所周知，火灾传感器在发生火灾时将输出高电平，在发生火灾时将输出低电平。因此，如果发生任何火灾，我们必须继续检查这些传感器。如果没有火灾，请通过使所有销高的方式使电动机保持停止，如下所示
+================
+Code
+----------------
+if（digitalRead（Left_S）== 1 && digitalRead（Right_S）== 1 && digitalRead（Forward_S）== 1）//如果未检测到火灾，则所有传感器均为零
+    {
+    //不要移动机器人
+    digitalWrite（LM1，HIGH）;
+    digitalWrite（LM2，HIGH）;
+    digitalWrite（RM1，HIGH）;
+    digitalWrite（RM2，HIGH）;
+    }
+================
+Text
+----------------
+同样，如果发生火灾，我们可以通过旋转相应的电动机来要求机器人朝该方向移动。一旦着火，左右传感器将不会检测到火，因为它将直接站在火的前方。现在，我们使用名为“ fire ”的变量，该变量将执行阻止火灾的功能。
+================
+Code
+----------------
+else if (digitalRead(Forward_S) ==0) //If Fire is straight ahead
+    {
+    //Move the robot forward
+    digitalWrite(LM1, HIGH);
+    digitalWrite(LM2, LOW);
+    digitalWrite(RM1, HIGH);
+    digitalWrite(RM2, LOW);
+    fire = true;
+    }
+================
+Text
+----------------
+一旦变量fire变为true，消防机器人的arduino代码将执行put_off_fire函数，直到火灾被扑灭为止。这是使用下面的代码完成的。
+================
+Code
+----------------
+while（fire == true）
+     {
+      put_off_fire（）;
+     }
+================
+Text
+----------------
+在put_off_fire（）内部，我们只需要通过将所有引脚设为高电平来停止机器人。然后打开泵将水推到容器外，同时我们也可以使用伺服电机旋转容器，以使水均匀地分配到整个容器中。这是使用下面的代码完成的
+================
+Code
+----------------
+void put_off_fire()
+{
+     delay (500);
+    digitalWrite(LM1, HIGH);
+    digitalWrite(LM2, HIGH);
+    digitalWrite(RM1, HIGH);
+    digitalWrite(RM2, HIGH);  
+   digitalWrite(pump, HIGH); delay(500);
+    for (pos = 50; pos <= 130; pos += 1) {
+    myservo.write(pos);
+    delay(10); 
+  }
+ for (pos = 130; pos >= 50; pos -= 1) {
+    myservo.write(pos);
+    delay(10);
+  }
+  digitalWrite(pump,LOW);
+  myservo.write(90);
+    fire=false;
+}
+================
+Header
+----------------
+消防机器人的工作：
+================
+Text
+----------------
+建议分步检查机器人的输出，而不是第一次一起运行。您可以将机器人安装到伺服电机上，并检查其是否能够成功跟随火势。然后，您可以检查泵和伺服电机是否正常工作。一旦一切正常运行，您就可以运行下面的程序，并享受消防员机器人的全部工作。
+机器人的完整工作原理请参见下面的视频。可以检测到火的最大距离取决于火的大小，对于小的火柴杆，该距离相对较小。您还可以使用模块顶部的电位器来控制机器人的灵敏度。我已经使用移动电源为机器人供电，您可以使用电池，甚至可以使用12V电池为其供电。
+希望您理解该项目，并喜欢构建类似的东西。如果您在构建此版本时遇到任何问题，请使用下面的评论部分来发布您的需求或使用论坛获取技术帮助。
+查看我们的机器人技术部分，以找到更多很棒的DIY机器人。
+================
+Code
+----------------
+/*------ Arduino Fire Fighting Robot Code----- */
+ 
+#include <Servo.h>
+Servo myservo;
+ 
+int pos = 0;    
+boolean fire = false;
+ 
+/*-------defining Inputs------*/
+#define Left_S 9      // left sensor
+#define Right_S 10      // right sensor
+#define Forward_S 8 //forward sensor
+ 
+/*-------defining Outputs------*/
+#define LM1 2       // left motor
+#define LM2 3       // left motor
+#define RM1 4       // right motor
+#define RM2 5       // right motor
+#define pump 6
+ 
+void setup()
+{
+  pinMode(Left_S, INPUT);
+  pinMode(Right_S, INPUT);
+  pinMode(Forward_S, INPUT);
+  pinMode(LM1, OUTPUT);
+  pinMode(LM2, OUTPUT);
+  pinMode(RM1, OUTPUT);
+  pinMode(RM2, OUTPUT);
+  pinMode(pump, OUTPUT);
+ 
+  myservo.attach(11);
+  myservo.write(90); 
+}
+ 
+void put_off_fire()
+{
+    delay (500);
+ 
+    digitalWrite(LM1, HIGH);
+    digitalWrite(LM2, HIGH);
+    digitalWrite(RM1, HIGH);
+    digitalWrite(RM2, HIGH);
+    
+   digitalWrite(pump, HIGH); delay(500);
+    
+    for (pos = 50; pos <= 130; pos += 1) { 
+    myservo.write(pos); 
+    delay(10);  
+  }
+  for (pos = 130; pos >= 50; pos -= 1) { 
+    myservo.write(pos); 
+    delay(10);
+  }
+  
+  digitalWrite(pump,LOW);
+  myservo.write(90);
+  
+  fire=false;
+}
+ 
+void loop()
+{
+   myservo.write(90); //Sweep_Servo();  
+ 
+    if (digitalRead(Left_S) ==1 && digitalRead(Right_S)==1 && digitalRead(Forward_S) ==1) //If Fire not detected all sensors are zero
+    {
+    //Do not move the robot
+    digitalWrite(LM1, HIGH);
+    digitalWrite(LM2, HIGH);
+    digitalWrite(RM1, HIGH);
+    digitalWrite(RM2, HIGH);
+    }
+    
+    else if (digitalRead(Forward_S) ==0) //If Fire is straight ahead
+    {
+    //Move the robot forward
+    digitalWrite(LM1, HIGH);
+    digitalWrite(LM2, LOW);
+    digitalWrite(RM1, HIGH);
+    digitalWrite(RM2, LOW);
+    fire = true;
+    }
+    
+    else if (digitalRead(Left_S) ==0) //If Fire is to the left
+    {
+    //Move the robot left
+    digitalWrite(LM1, HIGH);
+    digitalWrite(LM2, LOW);
+    digitalWrite(RM1, HIGH);
+    digitalWrite(RM2, HIGH);
+    }
+    
+    else if (digitalRead(Right_S) ==0) //If Fire is to the right
+    {
+    //Move the robot right
+    digitalWrite(LM1, HIGH);
+    digitalWrite(LM2, HIGH);
+    digitalWrite(RM1, HIGH);
+    digitalWrite(RM2, LOW);
+    }
+    
+delay(300); //Slow down the speed of robot
+ 
+     while (fire == true)
+     {
+      put_off_fire();
+     }
+}
+================
+Title
+----------------
+LinuxCNC基础知识
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/absinjun/article/details/122203943
+================
+Stars
+----------------
+15
+================
+Header
+----------------
+一. CNC的概念
+================
+Text
+----------------
+数控技术产生于 20 世纪中期， 是一种用数字、 文字和符号组成的指令来实现控制一台或多台机械设备动作的技术。 数控技术的发展首先产生了以硬件数控系统（Numerical Control， NC） 为代表的产品， 硬件数控系统利用由逻辑元件和记忆元件组成的逻辑电路实现运算和控制功能，但具有灵活性差和柔性不好的缺点。 随着计算机技术的发展，利用一台计算机代替先前的逻辑电路实现数控装置所有功能的计算机数控系统（Computerized Numerical Control， CNC）逐渐成为市场的主流产品。
+补充：传统的机械加工都是用手工操作普通机床作业的，加工时用手摇动机械刀具切削金属，靠眼睛用卡尺等工具测量产品的精度的。现代工业早已使用电脑数字化控制的机床进行作业了，数控机床可以按照技术人员事先编好的程序自动对任何产品和零部件直接进行加工了。这就是我们说的“数控加工”。数控加工广泛应用在所有机械加工的任何领域，更是模具加工的发展趋势和重要和必要的技术手段。
+================
+Header
+----------------
+二、Linux 操作系统的实时性扩展
+================
+Text
+----------------
+LinuxCNC 数控平台是基于 Linux 操作系统进行开发的。 Linux 操作系统是一个遵循GPL 协议且开放源代码的通用操作系统。虽然 Linux 操作系统具有运行稳定、系统平均响应时间短、吞吐量高等优点，但是 Linux 操作系统的进程调度方式、中断屏蔽、频繁的换页等约束限制了 Linux 系统的实时性能。实时系统是指系统中计算结果的正确性不仅取决于计算逻辑的正确性，还取决于产生结果的时间，即不管实时应用程序进行的是何种任务，它不仅需要正确进行该任务而且还必须及时完成它。常用的提高 Linux操作系统实时性能的方法有两种，分别是直接修改 Linux 内核源代码法和双内核法。由于 Linux内核复杂且发展速度快，所以直接修改 Linux内核源代码的方法难以保持同步。双内核法通过在 Linux 操作系统中引入一个实时内核负责管理实时任务， 同时把原来的Linux 内核作为一个普通进程在实时内核上运行。双内核法使得改造后的 Linux 操作系统既能够及时响应实时任务，同时还能管理复杂的非实时通用任务。常用的双内核法实时补丁包括 RTLinux/GPL、 RTAI 和 Xenomai。 Xenomai 和 RTAI都是利用Adeos（Adaptive Domain Environment for Operating Systems）技术构建的。 Adeos是一个实时系统框架，它在同一套硬件上提供多个互相独立的域，一个域通常包含了一个操作系统，但不一定所有域的实现都是操作系统，域的实现还可以是软件实体。这样， Xenomai 微内核和 Linux 内核就能在 Adeos 提供的灵活的、可扩展的环境中共存，共享硬件资源。为了保证系统的实时性， Adeos 在中断发生时，先调度 Xenomai 响应该中断并执行该中断相应的实时任务，只有当系统没有实时任务和中断发生时， Adeos 才会调度 Linux 运行。本论文采用 Xenomai 实时补丁改造 Linux 操作系统使其成为一个实时操作系统。虽然 Xenomai 的操作系统实时性能比 RTAI 稍低，但是 Xenomai 的实时性能表现足以满足绝大部分实时任务的需求，同时 Xenomai 还能为系统和实时任务程序提供更好的可移植性和兼容性。 此外， Xenomai 拥有一套称为“skin”的 API，该 API 能提供与传统的工业级实时操作系统（例如 VxWorks、 VRTX、 pSOS+、 RTDM 等）相同的功能，有利于将传统实时操作系统下的应用程序移植到基于 Linux 的实时操作系统。Xenomai 的结构如图 2-3 所示。 测试证明，利用 Xenomai 补丁改造 Linux 实时性的做法简单高效，能满足 LinuxCNC 数控平台的实时任务高效运行的要求。
+[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-rSyOeuXM-1640700195833)(https://www.shanlily.cn/wordpress/wp-content/uploads/2020/03/LC2.png)]
+================
+Header
+----------------
+三、LinuxCNC简介
+================
+Text
+----------------
+软件平台采用最初由美国标准与技术研究院研制的一套用于机器人与通用数控机床等运动控制的开放式数控系统。原名为EMC2，后来改名为LinuxCNC，该系统是一个源代码公开的自由免费软件，该系统最大支持9轴联动控制，内置具有前瞻性的实时轨迹规划器，通过定制运动学模块可支持非笛卡尔空间的运动控制，支持的结构包括机器人关节控制和六轴连杆昆虫机器人控制等。
+LinuxCNC 是一个在 Linux 下运行的开源数控机床控制器。 开始是美国国家标准与技术研究院(NIST)主持的增强型运动控制器 EMC（Enhanced Machine Controller）项目，用于机床的数控系统。经过十几年的发展， LinuxCNC 系统它可以驱动铣床、车床、 3D打印机、激光切割机、等离子切割机、机器人手臂、 六足机器人等。
+================
+Header
+----------------
+四、LinuxCNC的优点
+================
+Text
+----------------
+LinuxCNC支持最多9轴运动控制，内置具有前瞻性的实时轨迹规划器，可实时轨迹误差限制、轴同步运动控制、自适应进给率控制等功能。
+提供一个适用于RS-274机床编程语言的G代码解析器，使得机床编程通俗易懂，降低了推广应用难度。
+提供了用于模块化自由配置的HAL层，实现控制系统自由定制与功能灵活扩展。
+通过定制运动学模块可支持非笛卡尔空间的运动控制。
+支持多种人机交互图形界面。包括Tcl/Tk、Python实现的Tkinter、Pyqt等。
+================
+Header
+----------------
+五、软件架构
+================
+Text
+----------------
+LinuxCNC 数控平台主要由界面模块、任务控制器、运动控制器和、 IO 控制器和硬件抽象层（HAL）组成。 (1) 界面模块 界面模块是一个供用户与数控系统进行交互的模块。用户的操作命令经过界面模块被传入任务控制器，任务控制器解析该操作命令并分派到运动控制器或 IO 控制器执行。用户也可通过界面模块获取任务控制器、运动控制器、 IO 控制器的状态信息和出错信息。
+(2) 任务控制器 任务控制器是数控系统各模块间的“协调者”，是整个数控系统的枢纽。任务控制器接收其他模块发出的命令，利用任务解析器分析该命令，最后把命令分派到对应的模块中。另外，任务控制器还能解析 NC 代码并生成标准指令。
+(3) 运动控制器 运动控制器主要负责实现运动控制功能，包括运动轨迹计算、插补计算、伺服控制值计算等。运动控制器通过硬件抽象层间接控制电机等外部设备。
+(4) IO控制器 IO 控制器负责数控系统输入输出的控制。 IO 控制器能从数控机床接收数字量信号，同时也能向数控机床输出控制信号。
+(5) 硬件抽象层（HAL） 硬件抽象层是一个位于操作系统和驱动程序之上的服务程序，它主要为应用程序提供一个统一的与实际物理硬件无关的查询接口。
+[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-IPMnR9d6-1640700195834)(https://www.shanlily.cn/wordpress/wp-content/uploads/2020/03/LC1.png)]
+================
+Header
+----------------
+六、LinuxCNC 硬件抽象层的原理
+================
+Text
+----------------
+硬件抽象层（HAL） 采用模块化的方法表示数控系统的硬件资源，例如： IO 模块、ADC 模块、 DAC 模块、脉冲模块以及编码器模块等。硬件抽象层作为硬件与应用程序的“桥梁”，能为应用程序提供统一的与硬件无关的接口，提高了应用程序的可移植性。硬件抽象技术具有以下基本概念： (1) 组件，组件是具有若干个输入/输出引脚的软件模块， 可动态地加载到 HAL 或从 HAL 中移除。 (2) 参数，参数用于调节组件， HAL 具有输入参数和输出参数两种类型。 (3) 引脚，引脚分为物理引脚和组件引脚两种类型，物理引脚与外部硬件相连，组件 引脚用于连接 HAL 组件，只存在于 HAL 中。 (4) 信号，信号用于连接 HAL 引脚，可随意连接或断开。 (5) 类型，引脚和信号都具有类型属性，信号只能连接相同类型的引脚。 HAL 具有 BIT（位）、 FLOAT（32 位浮点数）、 U32（32 位无符号整数）和 S32（32 位整 数） 四种类型。 (6) 函数，函数是一个执行具体行为的代码块，可使用 HAL 线程对函数进行调度。 (7) 线程，“线程”是实时任务的组成部分，以特定时间间隔运行。线程运行时会按 序执行加载到该线程的函数
+================
+Header
+----------------
+七、G 代码功能指令介绍
+================
+Text
+----------------
+G 代码是数控加工过程中最常见的编程语言。 LinuxCNC 的 G 代码基于RS274/NGC语言开发[22]。 G 代码文件通常由若干行代码组成，每行（也称为块）可能包括几条执行不同的事情的命令。典型的代码行由一个可选行号开头，后跟一个或多个代码组成。行号通常是一个字母 N 和数字组成，代码则是由一个非字母 N的字母加数字构成，一个代码可能是一条命令的一个参数或者直接就是一条命令。 例如， G1 X3 是具有两个字的有效代码行。 G1 是一个命令，意思是以编程给定的进给速度以直线移动到编程的终点， X3 表示 X 的值在移动结束时应为 3。大多数Linux CNC 加工代码命令以字母 G 或 M 开头（表示 General 和 Miscellaneous），分别称为 G 代码和 M 代码。 G 代码按工作模式分类如表 3-1 所示。 其中， 机床运动过程中常见的 G 代码及对应解释如下。 1） G0（默认速度直线运动）
+指坐标轴将按默认最大速率直线运动到指定位置，各坐标轴的速率由该速率分解而来，如： G0 X1 Y-2.3，表示从当前位置以默认最大速度直线运动到点(1 ,-2.3)。
+2） G1（指定速度直线运动） 编程给定进给速度的线性运动，如： G1 X1.2 Y-3 F10，表示从当前位置以进给 速度 10 直线运动到点(1.2 ,-3)。
+[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-6TRLKtym-1640700195834)(https://www.shanlily.cn/wordpress/wp-content/uploads/2020/03/LC3.png)]
+3） G2、 G3（圆弧运动） 使用 G2（顺时针圆弧）或 G3（逆时针圆弧）表示以当前进给速率坐圆弧运动 或螺旋弧运动。命令使用格式是： G2（或 G3） <X1- X2 - I- J- P->，其中 X1， X2 指代两个不同的轴所形成的平面， I 指 X1 轴上的偏移， J 指 X2 轴上的偏移， P 指 旋转圈数，运动时以相对于当前位置的偏移量为(I-,J-)的点为中心作画圆弧运动到 点(X1-,X2-），示例代码如下： G0 X1 Y1 表示（先运动到起始点(1,1)， G2 X1 Y2 I1 J0.5 F25，表示在 X 轴 Y 轴平面上，以坐标点(2,1.5)为弧中心用速度 25 顺时针方 向作画弧运动到点(1,2)。
+4） G4（暂停等待） G4 表示所有坐标轴暂时停止运动，等待一段时间。 G4 不影响主轴，冷却液和 任何 I/O 的功能使用。如： G4 P0.5 (所有坐标轴等待 0.5 秒后再前进)
+5） G7（车床直径模式）、 G8（车床半径模式） G7 表示进入车床 X 轴的直径模式； G8 表示进入车床 X 轴的半径模式。
+6） G90、 G91（距离模式） G90-绝对距离模式，表示以目前坐标系零点为参考，运动到到对应坐标； G91- 增量距离模式，表示以目前位置为参考，以一定偏移量运动。如：G90 G54 X0Y0Z0，表示运动到当前 G54 坐标系坐标原点； G91 X18 Y-20，表示以当前位置作参考， 向 X 正向移动 18 单位距离，向 Y 负向移动 20 单位距离。 G90 与 G91 两个命令互 斥， G91 模式下坐标系的设置对运动不会影响。
+7） G54-G59（坐标系设定） G54-G59 是坐标系的选择设定。 其它 G 代码指令，功能简单介绍如下： G10 L1 设置刀具表项； G10 L10 设置 工具台，计算工件； G10 L11 设置工具台，计算夹具； G10 L2 坐标系原点设定； G10 L20 坐标系原点设定计算； G17 - G19.1 平面选择； G20 G21 测量单位设定； G28 - G28.1 运动到设定位置； G40 取消刀具补偿； G41 G42 刀具补偿； G43 使用 工具表中的刀具长度偏移量； G92 坐标系偏移 G93 G94 G95 Feed 模式。 M 代码按工作模式分类如表 3-2 所示。
+[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-i8eaHIxz-1640700195835)(https://www.shanlily.cn/wordpress/wp-content/uploads/2020/03/LC4.png)]
+M0 - 临时暂停正在运行的程序，该指令在自动模式下才能生效， MDI 模式和 其他手动操作不起作用； M3 、 M4 、 M5-主轴控制， M3 表示以主轴设定速度 S 顺时针方向启动主轴运 动，M4 表示以主轴设定速度 S 逆时针方向启动主轴运动，M5 表示停止主轴运动； M6-刀具更换； M7 、 M8 、 M9-冷却液控制；
+以下隐藏内容为LinuxCNC英文手册和LinuxCNC中文手册（部分翻译），有需要的可以下载。
+[erphpdown]解压密码：ZMJPY123[/erphpdown]
+================
+Title
+----------------
+Arduino CNC电机扩展板详解（A4988驱动42步进电机）
+================
+License
+----------------
+None
+================
+Stars
+----------------
+164
+================
+Text
+----------------
+原文地址：http://www.taichi-maker.com/homepage/reference-index/motor-reference-index/arduino-cnc-shield/
+================
+Header
+----------------
+Arduino CNC电机扩展板详解（A4988驱动42步进电机）
+================
+Header
+----------------
+Arduino CNC 电机扩展板概述
+================
+Text
+----------------
+CNC是计算机数字控制（Computerized Numerical Control ）的英文缩写。顾名思义，Arduino CNC电机扩展板常用于驱动3D打印机、机械臂或机器人系统中的NEMA17电机（俗称42步进电机）。假如您想要用Arduino扩展板来驱动直流电机或28BYJ-48步进电机，我们推荐您使用AFMotor电机扩展板。
+CNC扩展板可以支持A4988、DRV8825等步进电机驱动板。本教程页面主要介绍如何使用A4988驱动板来配合CNC扩展板使用。
+学习使用Arduino CNC扩展板需要以下预备知识。您可通过点击以下链接进入太极创客团队为您制作的教程页面：
+– NEMA步进电机 – A4988电机驱动板 – AccelStepper库
+当您完成了以上的预备知识学习后我们就可以开始学习使用CNC驱动板了。首先，我们来看一看CNC电机扩展板的外观。
+Arduino CNC 电机扩展板（正面） A rduino-CNC电机扩展板背面
+当我们将A4988安装到 CNC扩展板以后并且将其安装到Arduino Uno开发板上，它就变成了下图这副模样。  Arduino CNC 电机扩展板外观
+上图中CNC电机扩展板装配有3个A4988驱动板。具体安装多少个A4988是根据您需要驱动步进电机数量来决定的。一台步进电机需要一个A4988。比如您需要驱动1个步进电机，那么只需要安装一个A4988就够了。
+安装A4988驱动板的时候请注意驱动板安装方向不要搞反。如下图所示：
+Arduino-CNC-安装A4988模块正确方法
+================
+Header
+----------------
+电机步进模式设置
+================
+Text
+----------------
+如下图所示，CNC扩展板的步进模式设置插针是用来设置电机步进模式的。通过向插针安装跳线帽，我们可以改变电机的步进模式。  Arduino-CNC-电机扩展板步进设置插针
+每一个A4988接口上都有三组步进设置插针。这三组插针旁的电路板上印刷有M0/M1/M2。通过安置跳线帽，我们可以设置电机的步进模式。如下图所示，在Z端口上的M0无跳线/M1有跳线/M2无跳线。对应查找表格即可看到，当前Z端口上A4988驱动模式为1/4步进。  Arduino-CNC-电机扩展板步进设置说明
+注：与单独使用A4988电机模块不同的是，我们只能使用CNC扩展板上的“步进设置跳线”来控制电机的步进模式。
+================
+Header
+----------------
+外接直流电源
+================
+Text
+----------------
+Arduino CNC电机扩展板上配有外接直流电源接口。该接口允许接入的电压范围是12V～36V。具体应该连接多大的电源电压是根据被驱动的电机工作电压所决定的。如果您使用的电机是NEMA17步进电机（42步进电机），通常该电机的工作电压是12伏特，那么您可以为扩展板配一个12伏特的外接电源。另外请注意：千万不要将电源的正负极接反，否则可能会对电路板造成损坏。  Arduino-CNC-扩展板外接电源接口
+如下图所示，我们可以用小改锥顺时针旋转外接电源接口上的螺钉来固定电源引线。若想移除引线，只要逆时针旋转螺钉就可以了。  Arduino-CNC-扩展板外接电源连接方法
+请注意：CNC扩展板的外接电源是无法为Arduino开发板供电的。因此在使用CNC扩展板时，您需要为Arduino单独提供一个电源。假如您不知道如何来为Arduino提供电源的话，可以点击这里了解几种常用的为Arduino供电方法。
+================
+Header
+----------------
+用于控制电机的Arduino引脚
+================
+Text
+----------------
+使用Arduino驱动CNC扩展板需要了解各引脚的具体控制功能。在以下说明图中，我们将Arduino各个引脚与CNC扩展板上印刷的标识文字一一对应，另外在下图后面还用文字对引脚功能进行说明。这些都是为了便于您参考使用。
+[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-Hsj3vraw-1617269177935)(C:%5CUsers%5CAdministrator%5CPictures%5Ctypora%5CArduino-CNC-Shield-Pin-Layout.jpg)]Arduino-CNC-电机扩展板引脚说明
+Arduino引脚 8 ———————– CNC 扩展板 EN ( 所有电机驱动板使能引脚/低电平有效 ) Arduino引脚 5 ———————– CNC 扩展板 X.DIR ( X端口方向控制引脚) Arduino引脚 2 ———————– CNC 扩展板 X.STEP ( X端口步进控制引脚) Arduino引脚 6 ———————– CNC 扩展板 Y.DIR ( Y端口方向控制引脚) Arduino引脚 3 ———————– CNC 扩展板 Y.STEP ( Y端口步进控制引脚) Arduino引脚 7 ———————– CNC 扩展板 Z.DIR ( Z端口方向控制引脚) Arduino引脚 4 ———————– CNC 扩展板 Z.STEP ( Z端口步进控制引脚) Arduino引脚 13 ———————– CNC 扩展板 A.DIR ( A端口方向控制引脚) Arduino引脚 12 ———————– CNC 扩展板 A.STEP ( A端口步进控制引脚) **请注意： \1. 以上列表仅列出了用于控制电机的Arduino引脚。有关其它引脚介绍，请参考本教程页面的其它引脚说明部分。 \2. 要使用CNC扩展板的A端口来控制步进电机，您必须先对扩展板进行额外设置。如果您想了解这一知识内容的具体信息，请参考本教程页面的使用端口A驱动电机部分。
+**
+================
+Header
+----------------
+Arduino CNC扩展板驱动1个NEMA步进电机（42步进电机）电路连接
+================
+Text
+----------------
+Arduino-CNC-电机扩展板驱动步进电机电路连接-1
+================
+Header
+----------------
+Arduino CNC扩展板驱动1个NEMA步进电机（42步进电机）示例程序
+================
+Text
+----------------
+本示例程序旨在演示如何使用Arduino Uno开发板通过Arduino CNC电机扩展板来驱动NEMA17步进电机(42步进电机)。本示例程序将用到AccelStepper库，如果您对该库不太了解，请点击这里进入我们制作的AccelStepper库教程页面。
+Arduino CNC电机扩展板驱动NEMA17步进电机示例程序-1
+Arduino
+================
+Code
+----------------
+/*
+Arduino CNC电机扩展板驱动NEMA17步进电机示例程序-1
+By 太极创客（http://www.taichi-maker.com）
+2019-03-10
+ 
+本示例程序旨在演示如何使用Arduino Uno开发板通过Arduino CNC电机扩展板来驱动NEMA17步进电机（42步进电机）。
+ 
+如需获得更多关于本示例程序的电路连接以及CNC电机扩展板的资料信息，
+请参考太极创客网站（http://www.taichi-maker.com），并在首页搜索栏中搜索关键字：CNC扩展板
+*/
+#include <AccelStepper.h>  //本示例程序使用AccelStepper库
+ 
+// 定义电机控制用常量
+ 
+// A4988连接Arduino引脚号
+const int xdirPin = 5;     // 方向控制引脚
+const int xstepPin = 2;    // 步进控制引脚
+const int xenablePin = 8;  // 使能控制引脚
+ 
+const int moveSteps = 200;    //运行步数
+ 
+AccelStepper stepper1(1,xstepPin,xdirPin);//建立步进电机对象
+ 
+void setup() {
+  
+  pinMode(xstepPin,OUTPUT);     // Arduino控制A4988步进引脚为输出模式
+  pinMode(xdirPin,OUTPUT);      // Arduino控制A4988方向引脚为输出模式
+  pinMode(xenablePin,OUTPUT);   // Arduino控制A4988使能引脚为输出模式
+  digitalWrite(xenablePin,LOW); // 将使能控制引脚设置为低电平从而让
+                                // 电机驱动板进入工作状态
+ 
+  stepper1.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper1.setAcceleration(20.0);  // 设置电机加速度20.0  
+}
+ 
+void loop() {
+  // 控制步进电机往复运动
+  if ( stepper1.currentPosition() == 0 ){ 
+    stepper1.moveTo(moveSteps);              
+  } else if ( stepper1.currentPosition() == moveSteps  ){
+    stepper1.moveTo(0);            
+  }         
+  
+  stepper1.run();   // 1号电机运行
+ 
+}
+================
+Header
+----------------
+Arduino CNC扩展板驱动3个NEMA步进电机（42步进电机）电路连接
+================
+Text
+----------------
+Arduino-CNC-电机扩展板驱动步进电机电路连接-1
+================
+Header
+----------------
+Arduino CNC扩展板驱动3个NEMA步进电机（42步进电机）示例程序
+================
+Text
+----------------
+本示例程序旨在演示如何使用Arduino Uno开发板通过Arduino CNC电机扩展板来驱动3个NEMA17步进电机(42步进电机)。本示例程序将用到AccelStepper库，如果您对该库不太了解，请点击这里进入我们制作的AccelStepper库教程页面。
+Arduino CNC电机扩展板驱动3个NEMA17步进电机示例程序
+Arduino
+================
+Code
+----------------
+/*
+Arduino CNC电机扩展板驱动3个NEMA17步进电机示例程序
+By 太极创客（http://www.taichi-maker.com）
+2019-03-10
+ 
+本示例程序旨在演示如何使用Arduino Uno开发板通过Arduino CNC电机扩展板来驱动3个NEMA17步进电机。
+ 
+如需获得更多关于本示例程序的电路连接以及CNC电机扩展板的资料信息，
+请参考太极创客网站（http://www.taichi-maker.com），并在首页搜索栏中搜索关键字：CNC扩展板
+*/
+#include <AccelStepper.h>  //本示例程序使用AccelStepper库
+ 
+// 定义电机控制用常量
+const int enablePin = 8;  // 使能控制引脚
+ 
+const int xdirPin = 5;     // x方向控制引脚
+const int xstepPin = 2;    // x步进控制引脚
+const int ydirPin = 6;     // y方向控制引脚
+const int ystepPin = 3;    // y步进控制引脚
+const int zdirPin = 7;     // z方向控制引脚
+const int zstepPin = 4;    // z步进控制引脚
+ 
+const int moveSteps = 200;    //测试电机运行使用的运行步数
+ 
+AccelStepper stepper1(1,xstepPin,xdirPin);//建立步进电机对象1
+AccelStepper stepper2(1,ystepPin,ydirPin);//建立步进电机对象2
+AccelStepper stepper3(1,zstepPin,zdirPin);//建立步进电机对象3
+ 
+void setup() {
+  
+  pinMode(xstepPin,OUTPUT);     // Arduino控制A4988x步进引脚为输出模式
+  pinMode(xdirPin,OUTPUT);      // Arduino控制A4988x方向引脚为输出模式
+  pinMode(ystepPin,OUTPUT);     // Arduino控制A4988y步进引脚为输出模式
+  pinMode(ydirPin,OUTPUT);      // Arduino控制A4988y方向引脚为输出模式
+  pinMode(zstepPin,OUTPUT);     // Arduino控制A4988z步进引脚为输出模式
+  pinMode(zdirPin,OUTPUT);      // Arduino控制A4988z方向引脚为输出模式
+  
+  pinMode(enablePin,OUTPUT);   // Arduino控制A4988使能引脚为输出模式
+  digitalWrite(enablePin,LOW); // 将使能控制引脚设置为低电平从而让
+                               // 电机驱动板进入工作状态
+                                
+  stepper1.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper1.setAcceleration(20.0);  // 设置电机加速度20.0  
+  stepper2.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper2.setAcceleration(20.0);  // 设置电机加速度20.0 
+  stepper3.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper3.setAcceleration(20.0);  // 设置电机加速度20.0 
+}
+ 
+void loop() {
+  // 控制步进电机1往复运动
+  if ( stepper1.currentPosition() == 0 ){ 
+    stepper1.moveTo(moveSteps);              
+  } else if ( stepper1.currentPosition() == moveSteps  ){
+    stepper1.moveTo(0);            
+  }  
+  
+  // 控制步进电机2往复运动
+  if ( stepper2.currentPosition() == 0 ){ 
+    stepper2.moveTo(moveSteps/2);              
+  } else if ( stepper2.currentPosition() == moveSteps/2  ){
+    stepper2.moveTo(0);            
+  }    
+          
+  // 控制步进电机3往复运动
+  if ( stepper3.currentPosition() == 0 ){ 
+    stepper3.moveTo(moveSteps/4);              
+  } else if ( stepper3.currentPosition() == moveSteps/4  ){
+    stepper3.moveTo(0);            
+  }     
+  
+  stepper1.run();   // 1号电机运行
+  stepper2.run();   // 2号电机运行
+  stepper3.run();   // 3号电机运行
+ 
+}
+================
+Header
+----------------
+使用端口A驱动电机
+================
+Text
+----------------
+Arduino-CNC-扩展板端口A的A4988驱动板
+端口A的两种工作模式
+CNC扩展板的端口A比其它三个端口的功能要更丰富一些。但是使用端口A以前，我们必须先进行一些设置工作，因此很多朋友对如何使用该端口有些不知所措。接下来我将为您解释如何使用和设置CNC扩展板的端口A来控制步进电机。
+端口A有两种工作模式。第一种模式是复制X、Y、Z中任意一个端口上的电机运行情况（以下简称复制模式）。第二种模式是独立模式。
+所谓复制模式就是端口A所接的电机完全复制其它端口上的电机运行状态。比如我们将端口A设置为复制端口X，那么端口A电机的运行状况将是完全复制端口X上的电机运行状况。注：在复制模式下，端口A电机不受Arduino开发板的程序控制而只是单纯的复制端口X电机运行。
+除了复制模式外，端口A也可以独立模式来控制电机。这时端口A上的电机才会根据Arduino的程序控制运行。注意：在独立模式下，端口A上安装的A4988驱动板的step引脚是由Arduino的D12引脚所控制。dir引脚是由Arduino的D13引脚所控制。
+设置端口A的工作模式
+以上两种模式的设置是通过扩展板上专门用于设置端口A工作模式的一系列插针来完成的。（如下图所示）
+Arduino-CNC-扩展板端口A设置插针
+您可以使用跳线帽来设置端口A的工作模式（如下图所示）  Arduino-CNC-扩展板端口A设置说明
+================
+Header
+----------------
+驱动4个NEMA步进电机（42步进电机）电路连接
+================
+Text
+----------------
+CNC扩展板驱动4个步进电机（A端口电机独立运行）
+================
+Header
+----------------
+驱动4个NEMA步进电机（42步进电机）示例程序
+================
+Text
+----------------
+注：以下示例程序演示如何使用Arduino Uno开发板通过Arduino CNC电机扩展板来驱动4个NEMA17步进电机(42步进电机)。此示例中端口A电机工作模式为独立模式。 本示例程序将用到AccelStepper库，如果您对该库不太了解，请点击这里进入我们制作的AccelStepper库教程页面。
+Arduino CNC电机扩展板驱动4个NEMA17步进电机示例程序
+Arduino
+================
+Code
+----------------
+/*
+Arduino CNC电机扩展板驱动4个NEMA17步进电机示例程序
+By 太极创客（http://www.taichi-maker.com）
+2019-03-10
+ 
+本示例程序旨在演示如何使用Arduino Uno开发板通过Arduino CNC电机扩展板来驱动4个NEMA17步进电机。
+ 
+如需获得更多关于本示例程序的电路连接以及CNC电机扩展板的资料信息，
+请参考太极创客网站（http://www.taichi-maker.com），并在首页搜索栏中搜索关键字：CNC扩展板
+*/
+#include <AccelStepper.h>  //本示例程序使用AccelStepper库
+ 
+// 定义电机控制用常量
+const int enablePin = 8;  // 使能控制引脚
+ 
+const int xdirPin = 5;     // x方向控制引脚
+const int xstepPin = 2;    // x步进控制引脚
+const int ydirPin = 6;     // y方向控制引脚
+const int ystepPin = 3;    // y步进控制引脚
+const int zdirPin = 7;     // z方向控制引脚
+const int zstepPin = 4;    // z步进控制引脚
+const int adirPin = 13;     // a方向控制引脚
+const int astepPin = 12;    // a步进控制引脚
+ 
+const int moveSteps = 200;    //测试电机运行使用的运行步数
+ 
+AccelStepper stepper1(1,xstepPin,xdirPin);//建立步进电机对象1
+AccelStepper stepper2(1,ystepPin,ydirPin);//建立步进电机对象2
+AccelStepper stepper3(1,zstepPin,zdirPin);//建立步进电机对象3
+AccelStepper stepper4(1,astepPin,adirPin);//建立步进电机对象4
+ 
+void setup() {
+  
+  pinMode(xstepPin,OUTPUT);     // Arduino控制A4988x步进引脚为输出模式
+  pinMode(xdirPin,OUTPUT);      // Arduino控制A4988x方向引脚为输出模式
+  pinMode(ystepPin,OUTPUT);     // Arduino控制A4988y步进引脚为输出模式
+  pinMode(ydirPin,OUTPUT);      // Arduino控制A4988y方向引脚为输出模式
+  pinMode(zstepPin,OUTPUT);     // Arduino控制A4988z步进引脚为输出模式
+  pinMode(zdirPin,OUTPUT);      // Arduino控制A4988z方向引脚为输出模式
+  pinMode(astepPin,OUTPUT);     // Arduino控制A4988a步进引脚为输出模式
+  pinMode(adirPin,OUTPUT);      // Arduino控制A4988a方向引脚为输出模式  
+  
+  pinMode(enablePin,OUTPUT);   // Arduino控制A4988使能引脚为输出模式
+  digitalWrite(enablePin,LOW); // 将使能控制引脚设置为低电平从而让
+                               // 电机驱动板进入工作状态
+                                
+  stepper1.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper1.setAcceleration(20.0);  // 设置电机加速度20.0  
+  stepper2.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper2.setAcceleration(20.0);  // 设置电机加速度20.0 
+  stepper3.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper3.setAcceleration(20.0);  // 设置电机加速度20.0 
+  stepper4.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper4.setAcceleration(20.0);  // 设置电机加速度20.0   
+}
+ 
+void loop() {
+  // 控制步进电机1往复运动
+  if ( stepper1.currentPosition() == 0 ){ 
+    stepper1.moveTo(moveSteps);              
+  } else if ( stepper1.currentPosition() == moveSteps  ){
+    stepper1.moveTo(0);            
+  }  
+  
+  // 控制步进电机2往复运动
+  if ( stepper2.currentPosition() == 0 ){ 
+    stepper2.moveTo(moveSteps/2);              
+  } else if ( stepper2.currentPosition() == moveSteps/2  ){
+    stepper2.moveTo(0);            
+  }    
+          
+  // 控制步进电机3往复运动
+  if ( stepper3.currentPosition() == 0 ){ 
+    stepper3.moveTo(moveSteps/4);              
+  } else if ( stepper3.currentPosition() == moveSteps/4  ){
+    stepper3.moveTo(0);            
+  }     
+ 
+  // 控制步进电机4往复运动
+  if ( stepper4.currentPosition() == 0 ){ 
+    stepper4.moveTo(moveSteps/8);              
+  } else if ( stepper4.currentPosition() == moveSteps/8  ){
+    stepper4.moveTo(0);            
+  }
+    
+  stepper1.run();   // 1号电机运行
+  stepper2.run();   // 2号电机运行
+  stepper3.run();   // 3号电机运行
+  stepper4.run();   // 3号电机运行
+}
+================
+Header
+----------------
+其它CNC扩展板的引脚功能介绍
+================
+Text
+----------------
+除了以上我所介绍的控制电机用引脚以外，CNC扩展板上还有另外2组引脚插针。如下图所示，这2组引脚插针分别是：
+– 步进电机控制插针 – 其他引脚插针  CNC电机扩展板引脚
+步进电机控制插针
+如下图所示，步进电机控制插针共有两排。  电机控制引脚（备用）
+在插针旁印有各个引脚的名称标识。每行插针标识都使用”/”作为分割。”/”左侧的文字是图中蓝色插针的引脚标识。”/”右侧的文字是图中黄色插针的引脚标识。（如下图所示）  电机控制引脚标识说明
+上图中蓝色方框的引脚名称对应的是蓝色引脚插针，黄色方框中的引脚名称对应的是黄色引脚插针。这些引脚的作用是便于我们使用Arduino开发板以外的开发板来控制CNC扩展板。比如您可以使用树莓派或者ESP8266-NodeMCU等开发板通过这些备用引脚来控制CNC扩展板。
+以下是这组引脚的功能。
+EN： 所有电机驱动板使能引脚/低电平有效。（此引脚与各端口上的A4988 EN引脚联通） GND：接地 X.STEP: X端口步进控制引脚 X.DIR: X端口方向控制引脚 Y.STEP: Y端口步进控制引脚 Y.DIR: Y端口方向控制引脚 Z.STEP: Z端口步进控制引脚 Z.DIR: Z端口方向控制引脚 A.STEP: A端口步进控制引脚 A.DIR: A端口方向控制引脚 5V: 所有电机驱动板供电引脚（此引脚与各端口上的A4988 VDD引脚联通） 请注意，当使用非Arduino开发板来控制CNC扩展板时，请不要忘记为这里的5V引脚提供电源。这一操作的目的是为了确保各个A4988端口上的驱动板有电源供应。
+其它引脚插针
+如下图所示，CNC扩展板上还配有两排很长的引脚插针。  CNC扩展板其它引脚
+这两排引脚中，一排是黑色的而另一排是白色的。其中黑色的引脚全都是GND引脚。白色引脚插针旁的文字标识是这些引脚的名称。它们与Arduino的引脚是联通的。这些引脚与Arduino引脚的联通关系可通过以下列表查询。
+CNC 扩展板 Z+ 引脚 ———————– Arduino引脚 11 CNC 扩展板 Z- 引脚 ———————– Arduino引脚 11 CNC 扩展板 Y+ 引脚 ———————– Arduino引脚 10 CNC 扩展板 Y- 引脚 ———————– Arduino引脚 10 CNC 扩展板 X+ 引脚 ———————– Arduino引脚 9 CNC 扩展板 X- 引脚 ———————– Arduino引脚 9 CNC 扩展板 SpnEN 引脚 ———————– Arduino引脚 12 CNC 扩展板 SpnDir引脚 ———————– Arduino引脚 13 CNC 扩展板 CoolEn引脚 ———————– Arduino引脚 A3 CNC 扩展板 Abort 引脚 ———————– Arduino引脚 A0 CNC 扩展板 Hold 引脚 ———————– Arduino引脚 A1 CNC 扩展板 Resume引脚 ———————– Arduino引脚 A2 CNC 扩展板 E-STOP引脚 ———————– Arduino引脚 Reset
+以上引脚的名称看起来十分奇怪，事实上这些名字是来自CNC扩展板的最初设计。最早CNC扩展板主要用于驱动小型数控机床。上面列表中的引脚在机床中各自承担不同的作用。比如X+/X-这两个引脚用于工件台X向限位，再比如CoolEn用于冷却液的开关控制。因此这些引脚才会有了这些”奇奇怪怪”的名字。不过如今CNC扩展板的应用已经远远超越了数控车床而成为了3D打印机，机器人等项目的热门选择。但是这些引脚的名字还是保留了下来。
+由于CNC扩展板完全将Arduino开发板覆盖住了，假如我们的项目中除了要控制步进电机还需要Arduino来进行其它工作。您可通过上面列表中的对应关系来找到Arduino引脚并加以利用。比如我们想要让Arduino驱动一个LED点亮和熄灭，这时就可以使用CNC扩展板的 SpnEN 引脚来控制LED。在写程序的时候，只要使用Arduino引脚12就可以控制这个LED了。原因是SpnEN引脚与引脚12是联通的。用程序来控制Arduino引脚12就等同于用程序控制SpnEN 引脚。
+================
+Title
+----------------
+java SimpleDateFormat 格式日期出错 时间不对得问题
+================
+License
+----------------
+版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。 本文链接：https://blog.csdn.net/a960151a/article/details/90904284
+================
+Stars
+----------------
+0
+================
+Text
+----------------
+java SimpleDateFormat 格式日期出错 时间不对得问题
+将日期格式是 2019-09-09类型得字符串格式成20190909时如果直接 用SimpleDateFormat(“yyyyMMdd”)进行格式 会出现日期错误得情况 应该先将字符串转换成SimpleDateFormat(“yyyy-MM-dd”)类型得日期再进行格式化
+================
