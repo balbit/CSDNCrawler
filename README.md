@@ -28,7 +28,7 @@ To begin crawling from scratch, put starting links in seed_urls/, then run ```./
 ## Crawling
 
 To execute one round of crawling URLs, run ```./crawl.sh```. 
-To crawl more for $10$ rounds, simply run ```for i in {1..10}; do ./crawl.sh; done```
+To crawl for $10$ more rounds, simply run ```for i in {1..10}; do ./crawl.sh; done```
 
 
 ---
